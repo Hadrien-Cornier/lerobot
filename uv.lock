@@ -3365,7 +3365,6 @@ molmoact2 = [
 ]
 motorbridge-dep = [
     { name = "motorbridge" },
-    { name = "python-can" },
 ]
 motorbridge-smart-servo-dep = [
     { name = "motorbridge-smart-servo" },
@@ -3436,7 +3435,6 @@ reachy2 = [
 rebot = [
     { name = "motorbridge" },
     { name = "motorbridge-smart-servo" },
-    { name = "python-can" },
 ]
 robometer = [
     { name = "peft" },
@@ -3565,7 +3563,6 @@ requires-dist = [
     { name = "lerobot", extras = ["av-dep"], marker = "extra == 'dataset'" },
     { name = "lerobot", extras = ["av-dep"], marker = "extra == 'evaluation'" },
     { name = "lerobot", extras = ["can-dep"], marker = "extra == 'damiao'" },
-    { name = "lerobot", extras = ["can-dep"], marker = "extra == 'motorbridge-dep'" },
     { name = "lerobot", extras = ["can-dep"], marker = "extra == 'robstride'" },
     { name = "lerobot", extras = ["damiao"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["damiao"], marker = "extra == 'openarms'" },
