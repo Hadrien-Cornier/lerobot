@@ -130,6 +130,66 @@ def _pyav_keyframe_gap_frames(
     return float(gap) if gap >= 1 else float("inf")
 
 
+def _pyav_decode_span(
+    container: av.container.InputContainer,
+    stream: av.video.stream.VideoStream,
+    first_ts: float,
+    last_ts: float,
+    *,
+    stop_margin_s: float,
+    reorders: bool,
+    is_depth: bool,
+    log_loaded_timestamps: bool,
+) -> tuple[list[torch.Tensor], list[float]]:
+    """Decode the frames covering ``[first_ts, last_ts]`` in presentation order.
+
+    ``container.seek(offset, stream=stream)`` takes the offset in the stream's time_base units, and
+    ``backward=True`` lands on the nearest keyframe at or before it. Seeking to the exact target
+    matters: aiming even one tick earlier makes a keyframe target land on the previous keyframe
+    and decode a whole extra GOP. See:
+    https://pyav.basswood-io.com/docs/stable/api/container.html#av.container.InputContainer.seek
+
+    Without frame reordering, decode order is presentation order, so the first frame out is that
+    keyframe, at or before ``first_ts``: seek exactly, no retry. With reordering (B-frames, open
+    GOP), frames displayed before a keyframe can be decoded after it and depend on the previous
+    GOP, so the decoder may start past the target. There, start one frame early, and if the first
+    frame out is still past the target, seek earlier (doubling the step) until it is covered.
+    Stream metadata alone cannot tell how far back is enough for open-GOP leading pictures, hence
+    the check.
+
+    Decoding stops at the first frame within ``stop_margin_s`` of ``last_ts``: later frames are at
+    least one frame interval further on, so none of them can be closer to a requested timestamp.
+    """
+    time_base = stream.time_base
+    step = max(1, round(1 / (float(stream.average_rate) * time_base)))  # one frame
+    seek_pts = max(0, round(first_ts / time_base) - (step if reorders else 0))
+    while True:
+        frames: list[torch.Tensor] = []
+        frame_ts: list[float] = []
+        container.seek(seek_pts, backward=True, any_frame=False, stream=stream)
+        for frame in container.decode(stream):
+            if frame.pts is None:
+                continue
+            current_ts = float(frame.pts * time_base)
+            if log_loaded_timestamps:
+                logger.info(f"frame loaded at timestamp={current_ts:.4f}")
+            if is_depth:
+                arr = frame.to_ndarray(format="gray12le")  # (H, W) uint12
+                frames.append(torch.from_numpy(arr).unsqueeze(0).contiguous())
+            else:
+                arr = frame.to_ndarray(format="rgb24")  # (H, W, 3)
+                # Convert to CHW uint8 to match torchcodec's output layout.
+                frames.append(torch.from_numpy(arr).permute(2, 0, 1).contiguous())
+            frame_ts.append(current_ts)
+            if current_ts >= last_ts - stop_margin_s:
+                break
+        if reorders and seek_pts > 0 and frame_ts and frame_ts[0] > first_ts + stop_margin_s:
+            seek_pts = max(0, seek_pts - step)
+            step *= 2
+            continue
+        return frames, frame_ts
+
+
 def decode_video_frames_pyav(
     video_path: Path | str | BinaryIO,
     timestamps: list[float],
@@ -177,14 +237,15 @@ def decode_video_frames_pyav(
     loaded_frames: list[torch.Tensor] = []
     loaded_ts: list[float] = []
 
-    # Seek + decode. `container.seek(offset, stream=stream)` expects the offset in the stream's
-    # time_base units. `backward=True` lands on the nearest keyframe at or before the target, so
-    # we can then decode forward until we cover the cluster's last timestamp. See:
-    # https://pyav.basswood-io.com/docs/stable/api/container.html#av.container.InputContainer.seek
+    # Seek + decode, one keyframe-local cluster at a time (see `_pyav_decode_span`).
     with av.open(video_path) as container:
         stream = container.streams.video[0]
-        time_base = stream.time_base
         fps = float(stream.average_rate)
+        # Streams whose decoder may output frames out of decode order (B-frames, open GOP).
+        reorders = bool(stream.codec_context.has_b_frames)
+        # Query timestamps carry float error (e.g. 110.46666685 for a frame at 110.46666666). Accept a
+        # frame this close to the target as reaching it; half a frame keeps the next one farther away.
+        stop_margin_s = min(tolerance_s, 0.5 / fps)
 
         # Skip the split clusters logic when frames are contiguous: they form only one cluster.
         frame_indices = [round(ts * fps) for ts in sorted_ts]
@@ -200,27 +261,18 @@ def decode_video_frames_pyav(
             ):
                 cluster_end += 1
 
-            # Seek to the nearest keyframe at or before this cluster's first ts (1-tick margin),
-            # then decode forward only until the cluster's last ts is covered.
-            first_ts = sorted_ts[cluster_start]
-            last_ts = sorted_ts[cluster_end - 1]
-            container.seek(round(first_ts / time_base) - 1, backward=True, any_frame=False, stream=stream)
-            for frame in container.decode(stream):
-                if frame.pts is None:
-                    continue
-                current_ts = float(frame.pts * time_base)
-                if log_loaded_timestamps:
-                    logger.info(f"frame loaded at timestamp={current_ts:.4f}")
-                if is_depth:
-                    arr = frame.to_ndarray(format="gray12le")  # (H, W) uint12
-                    loaded_frames.append(torch.from_numpy(arr).unsqueeze(0).contiguous())
-                else:
-                    arr = frame.to_ndarray(format="rgb24")  # (H, W, 3)
-                    # Convert to CHW uint8 to match torchcodec's output layout.
-                    loaded_frames.append(torch.from_numpy(arr).permute(2, 0, 1).contiguous())
-                loaded_ts.append(current_ts)
-                if current_ts >= last_ts:
-                    break
+            frames, frame_ts = _pyav_decode_span(
+                container,
+                stream,
+                sorted_ts[cluster_start],
+                sorted_ts[cluster_end - 1],
+                stop_margin_s=stop_margin_s,
+                reorders=reorders,
+                is_depth=is_depth,
+                log_loaded_timestamps=log_loaded_timestamps,
+            )
+            loaded_frames.extend(frames)
+            loaded_ts.extend(frame_ts)
             cluster_start = cluster_end
 
     if not loaded_frames:
