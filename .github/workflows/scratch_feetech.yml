@@ -1,0 +1,30 @@
+name: Scratch Feetech tests
+on:
+  workflow_dispatch:
+permissions: {}
+env:
+  UV_VERSION: "0.11.30"
+  PYTHON_VERSION: "3.12"
+jobs:
+  feetech:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup uv and Python
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: uv sync --locked --extra test --extra feetech
+      - name: Motor and SO follower tests, with the Feetech SDK installed (fix)
+        run: uv run pytest tests/motors tests/robots/test_so100_follower.py -vv -rs -p no:cacheprovider
+      - name: New tests 20 times (flakiness)
+        run: for i in $(seq 1 20); do uv run pytest tests/motors/test_feetech.py -q -p no:cacheprovider -k "left_in_input_buffer or clear_port_discards or older_reply" || exit 1; done
+      - name: Same new tests on the code of main (must fail)
+        run: |
+          git checkout origin/main -- src 2>/dev/null || git fetch --depth=1 https://github.com/huggingface/lerobot.git b9cb121cb7d4e3e26ec5c906d08dda68d151ba52 && git checkout FETCH_HEAD -- src
+          uv run pytest tests/motors/test_feetech.py -q -p no:cacheprovider -k "left_in_input_buffer or clear_port_discards or older_reply" || echo "failed on main as expected"
