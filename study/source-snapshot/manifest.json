@@ -1,0 +1,17 @@
+{
+  "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+  "files": {
+    "src/lerobot/policies/lingbot_vla_v2/modeling_lingbot_vla_v2.py": {
+      "snapshot": "modeling_lingbot_vla_v2.py",
+      "sha256": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d"
+    },
+    "src/lerobot/policies/lingbot_vla_v2/model_core/depth_teachers.py": {
+      "snapshot": "depth_teachers.py",
+      "sha256": "3ed6f98fc0720b2c1e51cbb5f70fbe2a5ac5ecb64495c9d30ed6f0905e58b0c7"
+    },
+    "src/lerobot/policies/lingbot_vla_v2/model_core/video_teacher.py": {
+      "snapshot": "video_teacher.py",
+      "sha256": "9434178a501eb4b9db9e6799ee8903d475e1a9bb4aaf4ff1e052d93cb4125115"
+    }
+  }
+}
