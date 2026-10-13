@@ -37,8 +37,8 @@ ARRAY_NAMES = (
     "sample_offsets",
     "sync_samples",
 )
-_MAGIC = b"LRIDX002"
-_CACHE_VERSION = 2
+_MAGIC = b"LRIDX003"
+_CACHE_VERSION = 3
 
 
 def _content_digest(source: BinaryIO) -> str:
@@ -69,14 +69,16 @@ def _cache_path(path: Path, signature: tuple[int | str, ...] | None = None) -> P
             signature = _signature(os.fstat(source.fileno()), _content_digest(source))
     digest = hashlib.sha256(repr(signature).encode()).hexdigest()[:24]
     cache_root = Path(os.environ.get("HF_LEROBOT_HOME", str(Path(HF_HOME) / "lerobot"))).expanduser()
-    # Older processes must not find narrow arrays through the schema 3 cache path.
-    return cache_root / "streaming-indexes" / "v2" / f"mp4-{digest}.bin"
+    # Each mapped layout uses a separate path so older readers cannot open it.
+    return cache_root / "streaming-indexes" / "v3" / f"mp4-{digest}.bin"
 
 
 def _read_metadata(path: Path) -> dict[str, Any]:
     """Read the index footer and validate array bounds before mapping."""
     with path.open("rb") as source:
         size = os.fstat(source.fileno()).st_size
+        if size < 16:
+            raise ValueError("Invalid mapped MP4 index footer")
         source.seek(-16, os.SEEK_END)
         length = int.from_bytes(source.read(8), "little")
         if source.read(8) != _MAGIC or not 0 < length <= size - 16:
@@ -94,17 +96,36 @@ def _read_metadata(path: Path) -> dict[str, Any]:
     for item in payload["files"]:
         if not isinstance(item, dict) or not isinstance(item.get("arrays"), dict):
             raise ValueError("Invalid mapped MP4 index record")
+        if set(item["arrays"]) != set(ARRAY_NAMES):
+            raise ValueError("Invalid mapped MP4 index arrays")
+        data_end = size - 16 - length
         for name in ARRAY_NAMES:
-            offset, count, dtype_string = item["arrays"][name]
-            dtype = np.dtype(dtype_string)
+            descriptor = item["arrays"][name]
             if (
-                type(offset) is not int
-                or type(count) is not int
-                or dtype.kind not in "iuf"
+                not isinstance(descriptor, list)
+                or len(descriptor) != 4
+                or type(descriptor[0]) is not int
+                or type(descriptor[1]) is not int
+                or type(descriptor[2]) is not str
+                or type(descriptor[3]) is not int
+            ):
+                raise ValueError("Invalid mapped MP4 index array descriptor")
+            offset, count, dtype_string, stored_count = descriptor
+            try:
+                dtype = np.dtype(dtype_string)
+            except (TypeError, ValueError) as error:
+                raise ValueError("Invalid mapped MP4 index array dtype") from error
+            if (
+                dtype.kind not in "iuf"
+                or (name == "sample_pts" and dtype != np.dtype(np.float64))
+                or (name != "sample_pts" and dtype.kind not in "iu")
                 or count < 0
                 or offset < 0
                 or offset % dtype.alignment
-                or offset + count * dtype.itemsize > size - 16 - length
+                or stored_count < 0
+                or offset + stored_count * dtype.itemsize > data_end
+                or (stored_count != count and not (dtype.kind in "iu" and count > 0 and stored_count == 1))
+                or (name == "sample_pts" and stored_count != count)
             ):
                 raise ValueError("Invalid mapped MP4 index array")
         counts = {item["arrays"][name][1] for name in ARRAY_NAMES if name != "sync_samples"}
@@ -254,8 +275,20 @@ def mapped_sidecar(path: Path, *, workers: int = 4) -> tuple[Path, dict[str, Any
                                     if name != "sample_pts" and array.dtype.kind in "iu":
                                         array = _compact_integer_array(cast(IntegerArray, array))
                                     out.write(b"\0" * (-out.tell() % 8))
-                                    item["arrays"][name] = [out.tell(), array.size, array.dtype.str]
-                                    out.write(array.tobytes())
+                                    is_constant = (
+                                        name != "sample_pts"
+                                        and array.dtype.kind in "iu"
+                                        and array.size > 0
+                                        and int(array.min()) == int(array.max())
+                                    )
+                                    stored = array[:1] if is_constant else array
+                                    item["arrays"][name] = [
+                                        out.tell(),
+                                        array.size,
+                                        array.dtype.str,
+                                        stored.size,
+                                    ]
+                                    out.write(stored.tobytes())
                                     # Release this array before the next member.
                                     del array
                                 del arrays
@@ -299,7 +332,10 @@ def install_sidecar(source: Path, destination: Path) -> None:
 
 def mapped_arrays(buffer: np.memmap[Any, Any], item: dict[str, Any]) -> dict[str, NDArray[np.generic]]:
     """Return views whose base retains the single shared read-only mapping."""
-    return {
-        name: np.ndarray((count,), dtype=np.dtype(dtype), buffer=buffer, offset=offset)
-        for name, (offset, count, dtype) in item["arrays"].items()
-    }
+    arrays = {}
+    for name, (offset, count, dtype, stored_count) in item["arrays"].items():
+        strides = (0,) if stored_count == 1 and count > 1 else None
+        arrays[name] = np.ndarray(
+            (count,), dtype=np.dtype(dtype), buffer=buffer, offset=offset, strides=strides
+        )
+    return arrays

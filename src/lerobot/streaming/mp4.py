@@ -103,6 +103,8 @@ class Mp4Index:
     @cached_property
     def _has_composition_offsets(self) -> bool:
         """Cache whether presentation order differs from decode order."""
+        if self.sample_composition_offsets.size and self.sample_composition_offsets.strides == (0,):
+            return bool(self.sample_composition_offsets[0])
         return bool(np.any(self.sample_composition_offsets))
 
     def sample_slice(

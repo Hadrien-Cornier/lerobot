@@ -219,15 +219,16 @@ def test_new_mapping_compacts_legacy_archive_and_isolates_old_cache(tmp_path: Pa
     path = tmp_path / "legacy.npz"
     np.savez_compressed(path, manifest_json=json.dumps(payload).encode(), **arrays)
     new_cache = sidecar_utils._cache_path(path)
-    old_cache = new_cache.parent.parent / new_cache.name
+    old_cache = new_cache.parent.parent / "v2" / new_cache.name
     old_cache.parent.mkdir(parents=True, exist_ok=True)
     old_cache.write_bytes(b"legacy process cache")
     cache, metadata = sidecar_utils.mapped_sidecar(path)
     assert cache == new_cache
-    assert cache.parent.name == "v2"
+    assert cache.parent.name == "v3"
+    assert old_cache.parent.name == "v2"
     assert cache != old_cache
-    assert cache.read_bytes()[-8:] == b"LRIDX002"
-    assert metadata["cache_version"] == 2
+    assert cache.read_bytes()[-8:] == b"LRIDX003"
+    assert metadata["cache_version"] == 3
     assert old_cache.read_bytes() == b"legacy process cache"
     loaded = EpisodeVideoManifest.load_file_sidecar(path)[index.file_path].mp4
     assert loaded.sample_offsets.dtype == np.uint16
@@ -235,3 +236,111 @@ def test_new_mapping_compacts_legacy_archive_and_isolates_old_cache(tmp_path: Pa
     assert loaded.sample_pts.tobytes() == index.sample_pts.tobytes()
     for name in sidecar_utils.ARRAY_NAMES:
         np.testing.assert_array_equal(getattr(loaded, name), getattr(index, name))
+
+
+def test_constant_arrays_map_as_read_only_zero_stride_views(tmp_path: Path) -> None:
+    source = _minimal_mp4([10000, 10050, 10025])
+    index = parse_mp4_index("constant.mp4", source)
+    index = replace(
+        index,
+        sample_composition_offsets=np.full(3, -7, dtype=np.int64),
+        sync_samples=np.empty(0, dtype=np.int64),
+    )
+    spec = SidecarSpec("test/constant", "rev", str(tmp_path), ((index.file_path, index.file_size),))
+    path = tmp_path / "constant.npz"
+    EpisodeVideoManifest.save_file_sidecar(
+        path, [VideoFileRecord(index.file_path, index.file_size, index)], spec=spec
+    )
+
+    cache, payload = sidecar_utils.mapped_sidecar(path)
+    item = payload["files"][0]
+    buffer = np.memmap(cache, mode="r", dtype=np.uint8)
+    arrays = sidecar_utils.mapped_arrays(buffer, item)
+
+    for name in ("sample_durations", "sample_composition_offsets", "sample_sizes"):
+        array = arrays[name]
+        assert array.shape == (3,)
+        assert array.strides == (0,)
+        assert not array.flags.writeable
+        np.testing.assert_array_equal(array, getattr(index, name))
+    assert arrays["sync_samples"].shape == (0,)
+    assert arrays["sync_samples"].strides != (0,)
+    assert arrays["sample_offsets"].strides != (0,)
+    assert item["arrays"]["sample_composition_offsets"][3] == 1
+    assert item["arrays"]["sample_pts"][3] == 3
+    assert arrays["sample_composition_offsets"].base is buffer
+    del buffer
+    assert arrays["sample_composition_offsets"].base is not None
+    assert bool(np.any(arrays["sample_composition_offsets"]))
+
+
+def test_singleton_and_empty_array_mappings_keep_shape_and_values(tmp_path: Path) -> None:
+    index = parse_mp4_index("singleton.mp4", _minimal_mp4([10000, 10050, 10025]))
+    index = replace(
+        index,
+        sample_pts=index.sample_pts[:1],
+        sample_durations=index.sample_durations[:1],
+        sample_composition_offsets=np.array([-9], dtype=np.int64),
+        sample_sizes=index.sample_sizes[:1],
+        sample_offsets=index.sample_offsets[:1],
+        sync_samples=np.empty(0, dtype=np.int64),
+    )
+    spec = SidecarSpec("test/singleton", "rev", str(tmp_path), ((index.file_path, index.file_size),))
+    path = tmp_path / "singleton.npz"
+    EpisodeVideoManifest.save_file_sidecar(
+        path, [VideoFileRecord(index.file_path, index.file_size, index)], spec=spec
+    )
+    cache, payload = sidecar_utils.mapped_sidecar(path)
+    arrays = sidecar_utils.mapped_arrays(np.memmap(cache, mode="r", dtype=np.uint8), payload["files"][0])
+    assert arrays["sample_composition_offsets"].shape == (1,)
+    np.testing.assert_array_equal(arrays["sample_composition_offsets"], [-9])
+    assert arrays["sync_samples"].shape == (0,)
+    assert not arrays["sync_samples"].flags.writeable
+
+
+@pytest.mark.parametrize(
+    "field,mutate",
+    [
+        ("sample_pts", lambda descriptor: descriptor.append(3)),
+        ("sample_pts", lambda descriptor: descriptor.__setitem__(2, "<f4")),
+        ("sample_sizes", lambda descriptor: descriptor.__setitem__(3, 2)),
+        ("sample_offsets", lambda descriptor: descriptor.__setitem__(3, 4)),
+        ("sample_durations", lambda descriptor: descriptor.__setitem__(0, 10**9)),
+        ("sync_samples", lambda descriptor: descriptor.__setitem__(2, "|O")),
+    ],
+)
+def test_invalid_v3_descriptors_are_recreated(tmp_path: Path, field: str, mutate: Any) -> None:
+    index = parse_mp4_index("invalid.mp4", _minimal_mp4([10000, 10050, 10025]))
+    spec = SidecarSpec("test/invalid", "rev", str(tmp_path), ((index.file_path, index.file_size),))
+    path = tmp_path / "invalid.npz"
+    EpisodeVideoManifest.save_file_sidecar(
+        path, [VideoFileRecord(index.file_path, index.file_size, index)], spec=spec
+    )
+    cache, payload = sidecar_utils.mapped_sidecar(path)
+    raw = cache.read_bytes()
+    old_length = int.from_bytes(raw[-16:-8], "little")
+    mutate(payload["files"][0]["arrays"][field])
+    metadata = json.dumps(payload).encode()
+    cache.write_bytes(raw[: -16 - old_length] + metadata + len(metadata).to_bytes(8, "little") + raw[-8:])
+    loaded = EpisodeVideoManifest.load_file_sidecar(path)[index.file_path].mp4
+    np.testing.assert_array_equal(loaded.sample_offsets, index.sample_offsets)
+
+
+def test_constant_negative_composition_offsets_preserve_synthesis(tmp_path: Path) -> None:
+    index = parse_mp4_index("negative.mp4", _minimal_mp4([10000, 10050, 10025]))
+    index = replace(index, sample_composition_offsets=np.full(3, -2, dtype=np.int64))
+    dense = replace(
+        index,
+        sample_composition_offsets=np.repeat(index.sample_composition_offsets, 1).copy(),
+    )
+    spec = SidecarSpec("test/negative", "rev", str(tmp_path), ((index.file_path, index.file_size),))
+    path = tmp_path / "negative.npz"
+    EpisodeVideoManifest.save_file_sidecar(
+        path, [VideoFileRecord(index.file_path, index.file_size, index)], spec=spec
+    )
+    loaded = EpisodeVideoManifest.load_file_sidecar(path)[index.file_path].mp4
+    span = loaded.sample_slice(0, 2, keyframe_pad_s=0, keyframe_pad_fraction=0)
+    payload = b"x" * span.byte_length
+    assert loaded._has_composition_offsets
+    assert synthesized_mp4_size(loaded, span) == len(synthesize_mp4(loaded, span, payload))
+    assert synthesize_mp4(loaded, span, payload) == synthesize_mp4(dense, span, payload)
