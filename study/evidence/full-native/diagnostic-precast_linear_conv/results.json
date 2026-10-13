@@ -1,0 +1,248 @@
+{
+  "config": {
+    "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+    "source_sha256": {
+      "src/lerobot/scripts/lerobot_train.py": "fae4152f57400d64dc9f4ed5999242866b1e94775a6fc7b5c489118d8acba66e",
+      "src/lerobot/policies/factory.py": "16d58386674759814f3fbd3174f71a0750bcd92cfb34a9d3f29113dd69b9d4bc",
+      "src/lerobot/policies/pretrained.py": "47be2c517d53da3dcc449f3858ec9bd93e45b5c1e5a7b307a41c3cf83d8d5d0b",
+      "src/lerobot/policies/lingbot_vla_v2/modeling_lingbot_vla_v2.py": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "src/lerobot/policies/lingbot_vla_v2/processor_lingbot_vla_v2.py": "1609cf8beb5d80690562df5432a39ffc29c818a82c4e8e1ff8388f52440b37f6",
+      "src/lerobot/policies/lingbot_vla_v2/configuration_lingbot_vla_v2.py": "0b0f44f79aeb8cdfe48995c75433b5b4e3dc3e3273e04ec9cbc109ccc8523ce3",
+      "src/lerobot/datasets/factory.py": "713aed1981af352d1306c75181eef878c39eb406d2e9d3b4d462b202ce66ca4e",
+      "src/lerobot/optim/optimizers.py": "a7a5c282c88973c08d4f947b831f8dab679d2347f0fcca18283377af792fe957",
+      "src/lerobot/optim/schedulers.py": "dbbe9ca43c914954ddf00dcb4589df9be8f21b17cdeb19af6bc44509e499bf6d",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/depth_teachers.py": "3ed6f98fc0720b2c1e51cbb5f70fbe2a5ac5ecb64495c9d30ed6f0905e58b0c7",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/video_teacher.py": "9434178a501eb4b9db9e6799ee8903d475e1a9bb4aaf4ff1e052d93cb4125115",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/qwen2_action_expert.py": "f49290d690eab8f01594a10af435cb1fb5f62ac0102352eb28c3b75f3c4c7869",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/modeling_lingbot_vla_v2_base.py": "ec7176044cad46f0b52d7623fed7b512e9c8d712b55f452726e1374d875f5cac",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/align_heads.py": "4617889e281e89ff28d891de3086bfb7cfb9485b05ba0fb6892c488e46733661"
+    },
+    "repo": "/workspace/repo",
+    "checkpoint": "/workspace/repo/study/runtime/full-assets/base",
+    "qwen_config": "/workspace/repo/study/runtime/full-assets/qwen",
+    "dataset_root": "/workspace/repo/study/runtime/full-assets/omx",
+    "teacher_config": "/workspace/repo/study/runtime/profile-config.json",
+    "asset_verification_manifest": "/workspace/repo/study/runtime/full-policy-assets-verified.json",
+    "out": "/workspace/repo/study/runtime/results/diagnostic-precast_linear_conv",
+    "variant": "precast_linear_conv",
+    "phase": "diagnostic",
+    "batch_size": 1,
+    "seed": 4897,
+    "native_training_steps": 30000,
+    "stop_after_steps": 1,
+    "warmup_steps": 0,
+    "dataset_revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+    "model_revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+    "qwen_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "num_workers": 0,
+    "gradient_checkpointing": false,
+    "minimum_device_memory_gib": 75,
+    "allow_candidate": true,
+    "comparison_module": "/workspace/repo/study/compare_teachers.py",
+    "comparison_module_sha256": "4dc1cadfe56bc7b2c110ad16f51c58db015ec24bc6d3e59fee82679e1f36a94b",
+    "selected_candidate": "precast_linear_conv",
+    "total_timeout_seconds": 900
+  },
+  "model": {
+    "parameter_count": 6375906359,
+    "trainable_parameter_count": 6375906359,
+    "parameter_dtypes": [
+      "torch.bfloat16"
+    ],
+    "shape": {
+      "action": [
+        1,
+        50,
+        55
+      ],
+      "action_is_pad": [
+        1,
+        50
+      ],
+      "observation.images.camera_wrist_left_is_pad": [
+        1,
+        2
+      ],
+      "observation.images.camera_top_is_pad": [
+        1,
+        2
+      ],
+      "index": [
+        1
+      ],
+      "task_index": [
+        1
+      ],
+      "episode_index": [
+        1
+      ],
+      "frame_index": [
+        1
+      ],
+      "timestamp": [
+        1
+      ],
+      "observation.state": [
+        1,
+        55
+      ],
+      "observation.images.camera_wrist_left": [
+        1,
+        2,
+        3,
+        480,
+        640
+      ],
+      "observation.images.camera_top": [
+        1,
+        2,
+        3,
+        480,
+        640
+      ],
+      "state_joint_mask": [
+        1,
+        55
+      ],
+      "action_joint_mask": [
+        1,
+        55
+      ],
+      "joint_mask": [
+        1,
+        50,
+        55
+      ],
+      "teacher_images": [
+        1,
+        2,
+        3,
+        224,
+        224
+      ],
+      "images": [
+        1,
+        3,
+        576,
+        1536
+      ],
+      "img_masks": [
+        1,
+        3
+      ],
+      "image_grid_thw": [
+        1,
+        3,
+        3
+      ],
+      "observation.language.tokens": [
+        1,
+        72
+      ],
+      "observation.language.attention_mask": [
+        1,
+        72
+      ]
+    },
+    "teacher_fps": 0.6122449040412903
+  },
+  "steps": [
+    {
+      "step": 1,
+      "loss": 0.4285435974597931,
+      "update_policy_wall_ms": 132554.262545018,
+      "peak_allocated_bytes": 57779050496,
+      "peak_reserved_bytes": 59754151936,
+      "logs": {
+        "l1_loss": 0.3984375,
+        "seq_wise_loss": 0.0010927085531875491,
+        "router_z_loss": 2.2188276489032432e-05,
+        "depth_loss": 3.279125690460205,
+        "future_depth_loss": 3.2426934242248535,
+        "future_video_loss": 0.44022488594055176,
+        "current_video_loss": 0.2857535481452942,
+        "loss": 0.4285435974597931
+      },
+      "diagnostic": true,
+      "warmup": false
+    }
+  ],
+  "teacher_targets": [
+    {
+      "fps": 0.6122449040412903,
+      "targets": {
+        "depth": {
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "sha256": "9a762b5712b56d35bbf6936c33ac2e71141ac8cf1ddd1a3c437eb2dbc754b175",
+          "finite": true,
+          "bytes": 524288
+        },
+        "future_depth": {
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "sha256": "714ad8e478ca88faaa40102dad655e6a6eee8870007cd428f0a2565dc59f43c3",
+          "finite": true,
+          "bytes": 524288
+        },
+        "future_video": {
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "sha256": "2c3870086f11090cda6890d425219847e4d5b89b9b26de1c482a49460fa792cb",
+          "finite": true,
+          "bytes": 524288
+        },
+        "current_video": {
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "sha256": "3d10908342603707e32def4e119da92c91ed10e309e4d25358ea7da7eed32acb",
+          "finite": true,
+          "bytes": 524288
+        },
+        "future_video_cls": {
+          "shape": [
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "sha256": "6552faae70deeae2ab8e621be06265fd0d3799cba1c959a5e33b316924935bd6",
+          "finite": true,
+          "bytes": 2048
+        }
+      }
+    }
+  ],
+  "timing_scope": "Native update_policy: forward, backward, clipping, AdamW, scheduler and scalar logs; excludes data loading and preprocessing",
+  "diagnostic_timing_limit": "Tensor hashes synchronize and transfer parameters and optimizer state. Diagnostic wall time is not a performance result.",
+  "teacher_precast": [
+    {
+      "teacher": "moge",
+      "modules": 125,
+      "before_bytes": 387238932,
+      "after_bytes": 193619466
+    },
+    {
+      "teacher": "morgbd",
+      "modules": 150,
+      "before_bytes": 1228857344,
+      "after_bytes": 614428672
+    }
+  ],
+  "bounded_stop": true
+}

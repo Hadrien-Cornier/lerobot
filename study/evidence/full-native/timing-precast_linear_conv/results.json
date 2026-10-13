@@ -1,0 +1,397 @@
+{
+  "config": {
+    "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+    "source_sha256": {
+      "src/lerobot/scripts/lerobot_train.py": "fae4152f57400d64dc9f4ed5999242866b1e94775a6fc7b5c489118d8acba66e",
+      "src/lerobot/policies/factory.py": "16d58386674759814f3fbd3174f71a0750bcd92cfb34a9d3f29113dd69b9d4bc",
+      "src/lerobot/policies/pretrained.py": "47be2c517d53da3dcc449f3858ec9bd93e45b5c1e5a7b307a41c3cf83d8d5d0b",
+      "src/lerobot/policies/lingbot_vla_v2/modeling_lingbot_vla_v2.py": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "src/lerobot/policies/lingbot_vla_v2/processor_lingbot_vla_v2.py": "1609cf8beb5d80690562df5432a39ffc29c818a82c4e8e1ff8388f52440b37f6",
+      "src/lerobot/policies/lingbot_vla_v2/configuration_lingbot_vla_v2.py": "0b0f44f79aeb8cdfe48995c75433b5b4e3dc3e3273e04ec9cbc109ccc8523ce3",
+      "src/lerobot/datasets/factory.py": "713aed1981af352d1306c75181eef878c39eb406d2e9d3b4d462b202ce66ca4e",
+      "src/lerobot/optim/optimizers.py": "a7a5c282c88973c08d4f947b831f8dab679d2347f0fcca18283377af792fe957",
+      "src/lerobot/optim/schedulers.py": "dbbe9ca43c914954ddf00dcb4589df9be8f21b17cdeb19af6bc44509e499bf6d",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/depth_teachers.py": "3ed6f98fc0720b2c1e51cbb5f70fbe2a5ac5ecb64495c9d30ed6f0905e58b0c7",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/video_teacher.py": "9434178a501eb4b9db9e6799ee8903d475e1a9bb4aaf4ff1e052d93cb4125115",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/qwen2_action_expert.py": "f49290d690eab8f01594a10af435cb1fb5f62ac0102352eb28c3b75f3c4c7869",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/modeling_lingbot_vla_v2_base.py": "ec7176044cad46f0b52d7623fed7b512e9c8d712b55f452726e1374d875f5cac",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/align_heads.py": "4617889e281e89ff28d891de3086bfb7cfb9485b05ba0fb6892c488e46733661"
+    },
+    "repo": "/workspace/repo",
+    "checkpoint": "/workspace/repo/study/runtime/full-assets/base",
+    "qwen_config": "/workspace/repo/study/runtime/full-assets/qwen",
+    "dataset_root": "/workspace/repo/study/runtime/full-assets/omx",
+    "teacher_config": "/workspace/repo/study/runtime/profile-config.json",
+    "asset_verification_manifest": "/workspace/repo/study/runtime/full-policy-assets-verified.json",
+    "out": "/workspace/repo/study/runtime/results/timing-precast_linear_conv",
+    "variant": "precast_linear_conv",
+    "phase": "timing",
+    "batch_size": 1,
+    "seed": 4897,
+    "native_training_steps": 30000,
+    "stop_after_steps": 12,
+    "warmup_steps": 3,
+    "dataset_revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+    "model_revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+    "qwen_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "num_workers": 0,
+    "gradient_checkpointing": false,
+    "minimum_device_memory_gib": 75,
+    "allow_candidate": true,
+    "comparison_module": "/workspace/repo/study/compare_teachers.py",
+    "comparison_module_sha256": "4dc1cadfe56bc7b2c110ad16f51c58db015ec24bc6d3e59fee82679e1f36a94b",
+    "selected_candidate": "precast_linear_conv",
+    "total_timeout_seconds": 900
+  },
+  "model": {
+    "parameter_count": 6375906359,
+    "trainable_parameter_count": 6375906359,
+    "parameter_dtypes": [
+      "torch.bfloat16"
+    ],
+    "shape": {
+      "action": [
+        1,
+        50,
+        55
+      ],
+      "action_is_pad": [
+        1,
+        50
+      ],
+      "observation.images.camera_wrist_left_is_pad": [
+        1,
+        2
+      ],
+      "observation.images.camera_top_is_pad": [
+        1,
+        2
+      ],
+      "index": [
+        1
+      ],
+      "task_index": [
+        1
+      ],
+      "episode_index": [
+        1
+      ],
+      "frame_index": [
+        1
+      ],
+      "timestamp": [
+        1
+      ],
+      "observation.state": [
+        1,
+        55
+      ],
+      "observation.images.camera_wrist_left": [
+        1,
+        2,
+        3,
+        480,
+        640
+      ],
+      "observation.images.camera_top": [
+        1,
+        2,
+        3,
+        480,
+        640
+      ],
+      "state_joint_mask": [
+        1,
+        55
+      ],
+      "action_joint_mask": [
+        1,
+        55
+      ],
+      "joint_mask": [
+        1,
+        50,
+        55
+      ],
+      "teacher_images": [
+        1,
+        2,
+        3,
+        224,
+        224
+      ],
+      "images": [
+        1,
+        3,
+        576,
+        1536
+      ],
+      "img_masks": [
+        1,
+        3
+      ],
+      "image_grid_thw": [
+        1,
+        3,
+        3
+      ],
+      "observation.language.tokens": [
+        1,
+        72
+      ],
+      "observation.language.attention_mask": [
+        1,
+        72
+      ]
+    },
+    "teacher_fps": 0.6122449040412903
+  },
+  "steps": [
+    {
+      "step": 1,
+      "loss": 0.4285460114479065,
+      "update_policy_wall_ms": 15024.364913988393,
+      "peak_allocated_bytes": 57779050496,
+      "peak_reserved_bytes": 59752054784,
+      "logs": {
+        "l1_loss": 0.3984375,
+        "seq_wise_loss": 0.0010927085531875491,
+        "router_z_loss": 2.2188276489032432e-05,
+        "depth_loss": 3.2796854972839355,
+        "future_depth_loss": 3.2427401542663574,
+        "future_video_loss": 0.44022488594055176,
+        "current_video_loss": 0.2857535481452942,
+        "loss": 0.4285460114479065
+      },
+      "diagnostic": false,
+      "warmup": true
+    },
+    {
+      "step": 2,
+      "loss": 0.5770559906959534,
+      "update_policy_wall_ms": 409.65490601956844,
+      "peak_allocated_bytes": 63261259776,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.546875,
+        "seq_wise_loss": 0.001093333470635116,
+        "router_z_loss": 3.210177237633616e-05,
+        "depth_loss": 3.321666717529297,
+        "future_depth_loss": 3.2178561687469482,
+        "future_video_loss": 0.4363343417644501,
+        "current_video_loss": 0.2880183458328247,
+        "loss": 0.5770559906959534
+      },
+      "diagnostic": false,
+      "warmup": true
+    },
+    {
+      "step": 3,
+      "loss": 0.7215954065322876,
+      "update_policy_wall_ms": 400.1663959934376,
+      "peak_allocated_bytes": 63251695616,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.69140625,
+        "seq_wise_loss": 0.0011108691105619073,
+        "router_z_loss": 2.412087815173436e-05,
+        "depth_loss": 3.2989954948425293,
+        "future_depth_loss": 3.2337779998779297,
+        "future_video_loss": 0.43956685066223145,
+        "current_video_loss": 0.2912035584449768,
+        "loss": 0.7215954065322876
+      },
+      "diagnostic": false,
+      "warmup": true
+    },
+    {
+      "step": 4,
+      "loss": 1.5850768089294434,
+      "update_policy_wall_ms": 400.5889830295928,
+      "peak_allocated_bytes": 63259551744,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 1.5546875,
+        "seq_wise_loss": 0.0013143188552930951,
+        "router_z_loss": 3.689494769787416e-05,
+        "depth_loss": 3.299300193786621,
+        "future_depth_loss": 3.2185750007629395,
+        "future_video_loss": 0.4501244127750397,
+        "current_video_loss": 0.2915697693824768,
+        "loss": 1.5850768089294434
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 5,
+      "loss": 1.4285510778427124,
+      "update_policy_wall_ms": 402.4844180094078,
+      "peak_allocated_bytes": 63251695616,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 1.3984375,
+        "seq_wise_loss": 0.0010843655327335,
+        "router_z_loss": 2.33239679801045e-05,
+        "depth_loss": 3.2769317626953125,
+        "future_depth_loss": 3.228760242462158,
+        "future_video_loss": 0.4507918953895569,
+        "current_video_loss": 0.2949940264225006,
+        "loss": 1.4285510778427124
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 6,
+      "loss": 0.6273768544197083,
+      "update_policy_wall_ms": 407.8751360066235,
+      "peak_allocated_bytes": 63259551744,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.59765625,
+        "seq_wise_loss": 0.0010923700174316764,
+        "router_z_loss": 3.103090784861706e-05,
+        "depth_loss": 3.170578956604004,
+        "future_depth_loss": 3.2460246086120605,
+        "future_video_loss": 0.44498366117477417,
+        "current_video_loss": 0.28770461678504944,
+        "loss": 0.6273768544197083
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 7,
+      "loss": 0.5693841576576233,
+      "update_policy_wall_ms": 453.02612701198086,
+      "peak_allocated_bytes": 63251695616,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.5390625,
+        "seq_wise_loss": 0.0010917838662862778,
+        "router_z_loss": 1.921563125506509e-05,
+        "depth_loss": 3.310991048812866,
+        "future_depth_loss": 3.2669196128845215,
+        "future_video_loss": 0.4352678656578064,
+        "current_video_loss": 0.28950440883636475,
+        "loss": 0.5693841576576233
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 8,
+      "loss": 0.9450823664665222,
+      "update_policy_wall_ms": 432.7913770102896,
+      "peak_allocated_bytes": 63259551744,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.9140625,
+        "seq_wise_loss": 0.0011503990972414613,
+        "router_z_loss": 1.8643351722857915e-05,
+        "depth_loss": 3.517902135848999,
+        "future_depth_loss": 3.2192270755767822,
+        "future_video_loss": 0.4346490502357483,
+        "current_video_loss": 0.29093238711357117,
+        "loss": 0.9450823664665222
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 9,
+      "loss": 0.8154597878456116,
+      "update_policy_wall_ms": 437.065003963653,
+      "peak_allocated_bytes": 63251695616,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.78515625,
+        "seq_wise_loss": 0.0011174877872690558,
+        "router_z_loss": 2.4780136300250888e-05,
+        "depth_loss": 3.3257622718811035,
+        "future_depth_loss": 3.2233426570892334,
+        "future_video_loss": 0.44793885946273804,
+        "current_video_loss": 0.29326796531677246,
+        "loss": 0.8154597878456116
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 10,
+      "loss": 1.1007307767868042,
+      "update_policy_wall_ms": 437.84178100759163,
+      "peak_allocated_bytes": 63259551744,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 1.0703125,
+        "seq_wise_loss": 0.0011030923342332244,
+        "router_z_loss": 4.319728759583086e-05,
+        "depth_loss": 3.4195544719696045,
+        "future_depth_loss": 3.1664347648620605,
+        "future_video_loss": 0.44194382429122925,
+        "current_video_loss": 0.2900850176811218,
+        "loss": 1.1007307767868042
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 11,
+      "loss": 0.6635743379592896,
+      "update_policy_wall_ms": 429.27740898448974,
+      "peak_allocated_bytes": 63251695616,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.6328125,
+        "seq_wise_loss": 0.0011193358805030584,
+        "router_z_loss": 3.7221951060928404e-05,
+        "depth_loss": 3.500485420227051,
+        "future_depth_loss": 3.1909406185150146,
+        "future_video_loss": 0.42786312103271484,
+        "current_video_loss": 0.2820432782173157,
+        "loss": 0.6635743379592896
+      },
+      "diagnostic": false,
+      "warmup": false
+    },
+    {
+      "step": 12,
+      "loss": 0.7291733622550964,
+      "update_policy_wall_ms": 429.60082896752283,
+      "peak_allocated_bytes": 63259551744,
+      "peak_reserved_bytes": 63575162880,
+      "logs": {
+        "l1_loss": 0.69921875,
+        "seq_wise_loss": 0.0011005563428625464,
+        "router_z_loss": 3.1369683711091056e-05,
+        "depth_loss": 3.2654924392700195,
+        "future_depth_loss": 3.2159805297851562,
+        "future_video_loss": 0.43822789192199707,
+        "current_video_loss": 0.28597402572631836,
+        "loss": 0.7291733622550964
+      },
+      "diagnostic": false,
+      "warmup": false
+    }
+  ],
+  "teacher_targets": [],
+  "timing_scope": "Native update_policy: forward, backward, clipping, AdamW, scheduler and scalar logs; excludes data loading and preprocessing",
+  "diagnostic_timing_limit": "Tensor hashes synchronize and transfer parameters and optimizer state. Diagnostic wall time is not a performance result.",
+  "teacher_precast": [
+    {
+      "teacher": "moge",
+      "modules": 125,
+      "before_bytes": 387238932,
+      "after_bytes": 193619466
+    },
+    {
+      "teacher": "morgbd",
+      "modules": 150,
+      "before_bytes": 1228857344,
+      "after_bytes": 614428672
+    }
+  ],
+  "bounded_stop": true
+}

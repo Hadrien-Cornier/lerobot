@@ -1,0 +1,22 @@
+{
+  "1": {
+    "paired_calls": 24,
+    "all_candidate_calls_faster": true,
+    "mean_saved_ms": 10.249520541795695,
+    "mean_saved_ms_bootstrap95": [
+      9.769208417007272,
+      10.775499958375198
+    ],
+    "scope": "Paired randomized teacher-only calls; shared-process CUDA kernels; CPU threads4; L4"
+  },
+  "4": {
+    "paired_calls": 24,
+    "all_candidate_calls_faster": true,
+    "mean_saved_ms": 8.240960583558868,
+    "mean_saved_ms_bootstrap95": [
+      7.253653583120467,
+      9.334992791840099
+    ],
+    "scope": "Paired randomized teacher-only calls; shared-process CUDA kernels; CPU threads4; L4"
+  }
+}

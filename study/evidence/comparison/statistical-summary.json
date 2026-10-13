@@ -1,0 +1,64 @@
+{
+  "study_commit": "6af50a591e1167bb21c3b4bd2a153618e0724464",
+  "primary_scope": "24 randomized paired target calls per variant and batch",
+  "batches": {
+    "1": [
+      {
+        "variant": "position_contiguous",
+        "mean_paired_saving_ms": 7.716251457774585,
+        "saving_95pct_interval_ms": [
+          6.238199666465031,
+          9.121012333404602
+        ],
+        "all_paired_savings_positive": false
+      },
+      {
+        "variant": "precast_linear_conv",
+        "mean_paired_saving_ms": 9.18975216685188,
+        "saving_95pct_interval_ms": [
+          8.109388750805616,
+          10.302428333034186
+        ],
+        "all_paired_savings_positive": true
+      },
+      {
+        "variant": "joint_depth",
+        "mean_paired_saving_ms": 15.646211708068828,
+        "saving_95pct_interval_ms": [
+          14.818463208030153,
+          16.50643374947928
+        ],
+        "all_paired_savings_positive": true
+      }
+    ],
+    "4": [
+      {
+        "variant": "position_contiguous",
+        "mean_paired_saving_ms": 12.420965875207912,
+        "saving_95pct_interval_ms": [
+          11.13196062563778,
+          13.566881166752864
+        ],
+        "all_paired_savings_positive": true
+      },
+      {
+        "variant": "precast_linear_conv",
+        "mean_paired_saving_ms": 8.384664958157373,
+        "saving_95pct_interval_ms": [
+          7.698837374694752,
+          9.132583957883375
+        ],
+        "all_paired_savings_positive": true
+      },
+      {
+        "variant": "joint_depth",
+        "mean_paired_saving_ms": 8.777399625159887,
+        "saving_95pct_interval_ms": [
+          8.110077125062768,
+          9.454652374946212
+        ],
+        "all_paired_savings_positive": true
+      }
+    ]
+  }
+}

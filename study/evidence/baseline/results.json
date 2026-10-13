@@ -1,0 +1,1146 @@
+{
+  "config": {
+    "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+    "device": "cuda:0",
+    "cpu_threads": 4,
+    "seed": 4897,
+    "batch_sizes": [
+      1,
+      4
+    ],
+    "image_height": 224,
+    "image_width": 224,
+    "effective_fps": 0.6122449040412903,
+    "warmup": 3,
+    "repeats": 12,
+    "tiny_training_control": false,
+    "assets": {
+      "moge": {
+        "repo_id": "Ruicheng/moge-2-vitb-normal",
+        "revision": "ca5f0e07ff01d3e5a364c1d954ed12ee1814b368",
+        "filename": "model.pt",
+        "size": 419110160,
+        "sha256": "16b8110e86d5dc5a849db120ca96ef3a223fd30b0c9146d1d81db504073da5f6",
+        "git_blob_sha1": "87d30ba64eb8f37caf5b3f7557356ca640ca3cf5",
+        "path": "/workspace/repo/study/runtime/hub-cache/models--Ruicheng--moge-2-vitb-normal/blobs/16b8110e86d5dc5a849db120ca96ef3a223fd30b0c9146d1d81db504073da5f6"
+      },
+      "morgbd": {
+        "repo_id": "robbyant/lingbot-vla-v2-6b",
+        "revision": "11c703bf6a5c1f45b3b69168482da11fdbba53d7",
+        "filename": "depth/model.pt",
+        "size": 1316220456,
+        "sha256": "d70c5191eab853d436763b35d40ff99d13534b4bcd43e4d02823656968159e5b",
+        "git_blob_sha1": "1e42b4fd865b57dd468f48b16a59cc686ec8a1ea",
+        "path": "/workspace/repo/study/runtime/hub-cache/models--robbyant--lingbot-vla-v2-6b/blobs/d70c5191eab853d436763b35d40ff99d13534b4bcd43e4d02823656968159e5b"
+      },
+      "video": {
+        "repo_id": "robbyant/lingbot-vla-v2-6b",
+        "revision": "11c703bf6a5c1f45b3b69168482da11fdbba53d7",
+        "filename": "dino_video/teacher_step_10000.pth",
+        "size": 1401509792,
+        "sha256": "086285efd8d65bc66e96b363807c4010ee5c790b7452b765edaa23837a63705b",
+        "git_blob_sha1": "7465d0f90206db65e1923464843c36a15744b2d2",
+        "path": "/workspace/repo/study/runtime/hub-cache/models--robbyant--lingbot-vla-v2-6b/blobs/086285efd8d65bc66e96b363807c4010ee5c790b7452b765edaa23837a63705b"
+      },
+      "video_config": {
+        "repo_id": "robbyant/lingbot-vla-v2-6b",
+        "revision": "11c703bf6a5c1f45b3b69168482da11fdbba53d7",
+        "filename": "dino_video/config.yaml",
+        "size": 1388,
+        "sha256": "333befe36960b094f2604084802639ab4396c1fa51e51f8d1cb160e29522ac08",
+        "git_blob_sha1": "9223ab64a8e0081cd46446381dc4e6dce3a23080",
+        "path": "/workspace/repo/study/runtime/hub-cache/models--robbyant--lingbot-vla-v2-6b/blobs/9223ab64a8e0081cd46446381dc4e6dce3a23080"
+      }
+    },
+    "align_params": {
+      "mode": "query",
+      "num_task_tokens": 8,
+      "depth_loss_weight": 0.004,
+      "future_depth_loss_weight": 0.004,
+      "use_future_video": true,
+      "llm": {
+        "dim_out": 2560,
+        "image_token_size": 8,
+        "image_input_size": 224
+      },
+      "depth": {
+        "model_type": "MoRGBD",
+        "moge_path": "/path/to/depth/moge2-vitb-normal.pt",
+        "morgbd_path": "/path/to/depth/model.pt",
+        "num_layers": 1,
+        "num_heads": 4,
+        "dim_head": 32,
+        "ff_mult": 1,
+        "num_backbone_tokens": 256,
+        "token_size": 16,
+        "dim_out": 1024,
+        "input_size": 224,
+        "use_future_depth": true,
+        "block_future_depth_to_action": false,
+        "detach_future_image_feats": true
+      },
+      "video": {
+        "ckpt_path": "/path/to/dino_video/teacher_step_10000.pth",
+        "config_path": "/path/to/dino_video/config.yaml",
+        "attention_mode": "flex_block_causal",
+        "input_size": 256,
+        "block_suffix_to_future_video": false,
+        "share_future_depth_query": true,
+        "use_shared_future_task_proj": true,
+        "use_current_shared_task_proj": true,
+        "num_future_frames": 1,
+        "use_warmup_frame": true,
+        "effective_fps": 0.6122449040412903,
+        "n_blocks": 1,
+        "cls_pool": "last",
+        "detach_image_feats": true,
+        "num_layers": 1,
+        "num_heads": 4,
+        "dim_head": 32,
+        "ff_mult": 1,
+        "num_backbone_tokens": 256,
+        "dim_out": 1024,
+        "future_video_loss_weight": 0.004,
+        "use_smooth_l1_loss": false,
+        "use_mse_loss": true,
+        "mse_loss_weight": 1.0,
+        "use_patch_loss": true,
+        "use_current_patch_loss": true,
+        "use_cosine_loss": true,
+        "cosine_loss_weight": 0.2,
+        "use_cls_loss": false,
+        "cls_loss_type": "mse",
+        "cls_loss_weight": 0.2,
+        "log_max_samples": 32,
+        "log_scale": 16
+      },
+      "visual_steps": 5000
+    },
+    "mode": "profile",
+    "dataset_fps": 30,
+    "fixture_tensor_path": "/workspace/repo/study/runtime/real-frame-pairs.pt",
+    "fixture_tensor_sha256": "d668265e2bcd18b335e74d23bb03a51e080e43d07c8eb8029b14bfcfe4d27337",
+    "fixture_tensor_provenance": {
+      "dataset_id": "maximellerbach/omx_multicubes",
+      "dataset_revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "video": "videos/observation.images.top/chunk-000/file-000.mp4",
+      "video_sha256": "e130496b4e190f7657691ac9910e74eda3de006fbfaccc811acd4b9d243bb67d",
+      "current_indices": [
+        30,
+        150,
+        300,
+        600
+      ],
+      "future_indices": [
+        79,
+        199,
+        349,
+        649
+      ],
+      "decoded_timestamps": {
+        "30": {
+          "pts": 15360,
+          "time_base": "1/15360",
+          "seconds": 1.0
+        },
+        "79": {
+          "pts": 40448,
+          "time_base": "1/15360",
+          "seconds": 2.6333333333333333
+        },
+        "150": {
+          "pts": 76800,
+          "time_base": "1/15360",
+          "seconds": 5.0
+        },
+        "199": {
+          "pts": 101888,
+          "time_base": "1/15360",
+          "seconds": 6.633333333333334
+        },
+        "300": {
+          "pts": 153600,
+          "time_base": "1/15360",
+          "seconds": 10.0
+        },
+        "349": {
+          "pts": 178688,
+          "time_base": "1/15360",
+          "seconds": 11.633333333333333
+        },
+        "600": {
+          "pts": 307200,
+          "time_base": "1/15360",
+          "seconds": 20.0
+        },
+        "649": {
+          "pts": 332288,
+          "time_base": "1/15360",
+          "seconds": 21.633333333333333
+        }
+      },
+      "episode_metadata": {
+        "filename": "meta/episodes/chunk-000/file-000.parquet",
+        "sha256": "c97599850c94f9f6cdc340d7deddff4a77452dc2792fba6ab490e4634994b2c6",
+        "episode_index": 0,
+        "length": 807,
+        "dataset_from_index": 0,
+        "dataset_to_index": 807,
+        "video_chunk_index": 0,
+        "video_file_index": 0,
+        "video_from_timestamp": 0.0,
+        "video_to_timestamp": 26.9,
+        "verification": "Parent verified the pinned local Parquet row before the managed run."
+      },
+      "preprocessing": "PyAV sequential decode, rgb24, float32 /255, torchvision v2 resize224 antialias=True, multiply255 round clamp divide255",
+      "scope": "Four real frame pairs from episode zero. This fixture measures teacher work, not training accuracy.",
+      "libraries": {
+        "av": "15.1.0",
+        "torch": "2.11.0+cu128"
+      }
+    }
+  },
+  "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+  "source_sha256": {
+    "src/lerobot/policies/lingbot_vla_v2/modeling_lingbot_vla_v2.py": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/depth_teachers.py": "3ed6f98fc0720b2c1e51cbb5f70fbe2a5ac5ecb64495c9d30ed6f0905e58b0c7",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/video_teacher.py": "9434178a501eb4b9db9e6799ee8903d475e1a9bb4aaf4ff1e052d93cb4125115"
+  },
+  "asset_sha256": {
+    "moge": "16b8110e86d5dc5a849db120ca96ef3a223fd30b0c9146d1d81db504073da5f6",
+    "morgbd": "d70c5191eab853d436763b35d40ff99d13534b4bcd43e4d02823656968159e5b",
+    "video": "086285efd8d65bc66e96b363807c4010ee5c790b7452b765edaa23837a63705b",
+    "video_config": "333befe36960b094f2604084802639ab4396c1fa51e51f8d1cb160e29522ac08"
+  },
+  "input_manifest": {
+    "kind": "deterministic_PNG_fixture",
+    "future_offset": 49,
+    "metadata_sha256": {},
+    "png_sha256": {},
+    "teacher_tensor_override": {
+      "path": "/workspace/repo/study/runtime/real-frame-pairs.pt",
+      "sha256": "d668265e2bcd18b335e74d23bb03a51e080e43d07c8eb8029b14bfcfe4d27337",
+      "scope": "Pinned decoded teacher inputs; generated student fixture remains separate",
+      "provenance": {
+        "dataset_id": "maximellerbach/omx_multicubes",
+        "dataset_revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+        "video": "videos/observation.images.top/chunk-000/file-000.mp4",
+        "video_sha256": "e130496b4e190f7657691ac9910e74eda3de006fbfaccc811acd4b9d243bb67d",
+        "current_indices": [
+          30,
+          150,
+          300,
+          600
+        ],
+        "future_indices": [
+          79,
+          199,
+          349,
+          649
+        ],
+        "decoded_timestamps": {
+          "30": {
+            "pts": 15360,
+            "time_base": "1/15360",
+            "seconds": 1.0
+          },
+          "79": {
+            "pts": 40448,
+            "time_base": "1/15360",
+            "seconds": 2.6333333333333333
+          },
+          "150": {
+            "pts": 76800,
+            "time_base": "1/15360",
+            "seconds": 5.0
+          },
+          "199": {
+            "pts": 101888,
+            "time_base": "1/15360",
+            "seconds": 6.633333333333334
+          },
+          "300": {
+            "pts": 153600,
+            "time_base": "1/15360",
+            "seconds": 10.0
+          },
+          "349": {
+            "pts": 178688,
+            "time_base": "1/15360",
+            "seconds": 11.633333333333333
+          },
+          "600": {
+            "pts": 307200,
+            "time_base": "1/15360",
+            "seconds": 20.0
+          },
+          "649": {
+            "pts": 332288,
+            "time_base": "1/15360",
+            "seconds": 21.633333333333333
+          }
+        },
+        "episode_metadata": {
+          "filename": "meta/episodes/chunk-000/file-000.parquet",
+          "sha256": "c97599850c94f9f6cdc340d7deddff4a77452dc2792fba6ab490e4634994b2c6",
+          "episode_index": 0,
+          "length": 807,
+          "dataset_from_index": 0,
+          "dataset_to_index": 807,
+          "video_chunk_index": 0,
+          "video_file_index": 0,
+          "video_from_timestamp": 0.0,
+          "video_to_timestamp": 26.9,
+          "verification": "Parent verified the pinned local Parquet row before the managed run."
+        },
+        "preprocessing": "PyAV sequential decode, rgb24, float32 /255, torchvision v2 resize224 antialias=True, multiply255 round clamp divide255",
+        "scope": "Four real frame pairs from episode zero. This fixture measures teacher work, not training accuracy.",
+        "libraries": {
+          "av": "15.1.0",
+          "torch": "2.11.0+cu128"
+        }
+      }
+    }
+  },
+  "environment": {
+    "python": "3.12.13 (main, Mar 10 2026, 18:17:25) [Clang 21.1.4 ]",
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "gpu": "NVIDIA L4",
+    "cpu_threads": 4
+  },
+  "teacher_load_seconds": 5.703303082000275,
+  "batches": {
+    "1": {
+      "timings": [
+        {
+          "repeat": 0,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 84.00788099970669,
+          "cuda_event_timeline_ms": 83.95954895019531,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 1,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 81.66127300137305,
+          "cuda_event_timeline_ms": 81.63385772705078,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 2,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 81.09611899999436,
+          "cuda_event_timeline_ms": 81.06982421875,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 3,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 80.99341799970716,
+          "cuda_event_timeline_ms": 80.9658203125,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 4,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 81.49614899957669,
+          "cuda_event_timeline_ms": 81.4701156616211,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 5,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 83.78272600020864,
+          "cuda_event_timeline_ms": 83.75341033935547,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 6,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 82.32459899954847,
+          "cuda_event_timeline_ms": 82.29901123046875,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 7,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 82.46864299871959,
+          "cuda_event_timeline_ms": 82.44393920898438,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 8,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 83.10238899866818,
+          "cuda_event_timeline_ms": 83.06998443603516,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 9,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 81.6227319992322,
+          "cuda_event_timeline_ms": 81.5973129272461,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 10,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 81.00241699867183,
+          "cuda_event_timeline_ms": 80.97721862792969,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        },
+        {
+          "repeat": 11,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 81.3576849996025,
+          "cuda_event_timeline_ms": 81.33100891113281,
+          "allocated_before_bytes": 2257468928,
+          "peak_allocated_bytes": 3156489216,
+          "peak_reserved_bytes": 3246391296
+        }
+      ],
+      "target_comparisons": {
+        "source_vs_copied_baseline": {
+          "depth": {
+            "shape": [
+              1,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "future_depth": {
+            "shape": [
+              1,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "future_video": {
+            "shape": [
+              1,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "current_video": {
+            "shape": [
+              1,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "future_video_cls": {
+            "shape": [
+              1,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          }
+        }
+      },
+      "diagnostics": {
+        "baseline": {
+          "stages": [
+            {
+              "stage": "input_transfer",
+              "wall_ms": 0.31585799843014684,
+              "cuda_event_timeline_ms": 0.30534398555755615
+            },
+            {
+              "stage": "current_depth.recover_shift.uv",
+              "wall_ms": 0.12509399857663084,
+              "cuda_event_timeline_ms": 0.11472000181674957
+            },
+            {
+              "stage": "current_depth.recover_shift.points_interpolate",
+              "wall_ms": 0.11307299973850604,
+              "cuda_event_timeline_ms": 0.10335999727249146
+            },
+            {
+              "stage": "current_depth.recover_shift.points_D2H",
+              "wall_ms": 0.1259929995285347,
+              "cuda_event_timeline_ms": 0.11673600226640701
+            },
+            {
+              "stage": "current_depth.recover_shift.uv_interpolate",
+              "wall_ms": 0.10535300134506542,
+              "cuda_event_timeline_ms": 0.09577599912881851
+            },
+            {
+              "stage": "current_depth.recover_shift.uv_D2H",
+              "wall_ms": 0.1047629993990995,
+              "cuda_event_timeline_ms": 0.09616000205278397
+            },
+            {
+              "stage": "current_depth.recover_shift.mask_interpolate",
+              "wall_ms": 0.10791200111270882,
+              "cuda_event_timeline_ms": 0.09849599748849869
+            },
+            {
+              "stage": "current_depth.recover_shift.mask_D2H",
+              "wall_ms": 0.09189199954562355,
+              "cuda_event_timeline_ms": 0.08256000280380249
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_sample_0",
+              "wall_ms": 2.17097300082969,
+              "cuda_event_timeline_ms": 2.158720016479492
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_batch",
+              "wall_ms": 2.2479060007754015,
+              "cuda_event_timeline_ms": 2.239680051803589
+            },
+            {
+              "stage": "current_depth.recover_shift.shift_H2D",
+              "wall_ms": 0.0905720007722266,
+              "cuda_event_timeline_ms": 0.08240000158548355
+            },
+            {
+              "stage": "current_depth.moge_including_recovery",
+              "wall_ms": 18.647021999640856,
+              "cuda_event_timeline_ms": 18.638687133789062
+            },
+            {
+              "stage": "current_depth.nan_to_num",
+              "wall_ms": 0.07171200013544876,
+              "cuda_event_timeline_ms": 0.0629120022058487
+            },
+            {
+              "stage": "current_depth.rgbd_features",
+              "wall_ms": 21.11109299949021,
+              "cuda_event_timeline_ms": 21.102975845336914
+            },
+            {
+              "stage": "future_depth.recover_shift.uv",
+              "wall_ms": 0.1221430011355551,
+              "cuda_event_timeline_ms": 0.11215999722480774
+            },
+            {
+              "stage": "future_depth.recover_shift.points_interpolate",
+              "wall_ms": 0.09861299986368977,
+              "cuda_event_timeline_ms": 0.08895999938249588
+            },
+            {
+              "stage": "future_depth.recover_shift.points_D2H",
+              "wall_ms": 0.08351199903700035,
+              "cuda_event_timeline_ms": 0.07427199929952621
+            },
+            {
+              "stage": "future_depth.recover_shift.uv_interpolate",
+              "wall_ms": 0.10565199954726268,
+              "cuda_event_timeline_ms": 0.09577599912881851
+            },
+            {
+              "stage": "future_depth.recover_shift.uv_D2H",
+              "wall_ms": 0.07699200068600476,
+              "cuda_event_timeline_ms": 0.06812799721956253
+            },
+            {
+              "stage": "future_depth.recover_shift.mask_interpolate",
+              "wall_ms": 0.10549199942033738,
+              "cuda_event_timeline_ms": 0.09622400254011154
+            },
+            {
+              "stage": "future_depth.recover_shift.mask_D2H",
+              "wall_ms": 0.07120100053725764,
+              "cuda_event_timeline_ms": 0.06233600154519081
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_sample_0",
+              "wall_ms": 1.8298949999007164,
+              "cuda_event_timeline_ms": 1.8173120021820068
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_batch",
+              "wall_ms": 1.9003470006282441,
+              "cuda_event_timeline_ms": 1.8923519849777222
+            },
+            {
+              "stage": "future_depth.recover_shift.shift_H2D",
+              "wall_ms": 0.08522200005245395,
+              "cuda_event_timeline_ms": 0.07718399912118912
+            },
+            {
+              "stage": "future_depth.moge_including_recovery",
+              "wall_ms": 14.186282000082429,
+              "cuda_event_timeline_ms": 14.176608085632324
+            },
+            {
+              "stage": "future_depth.nan_to_num",
+              "wall_ms": 0.06711199966957793,
+              "cuda_event_timeline_ms": 0.0575999990105629
+            },
+            {
+              "stage": "future_depth.rgbd_features",
+              "wall_ms": 14.09080899975379,
+              "cuda_event_timeline_ms": 14.084416389465332
+            },
+            {
+              "stage": "video_input",
+              "wall_ms": 0.32097800067276694,
+              "cuda_event_timeline_ms": 0.3102400004863739
+            },
+            {
+              "stage": "dino_video",
+              "wall_ms": 17.69543699992937,
+              "cuda_event_timeline_ms": 17.683168411254883
+            },
+            {
+              "stage": "video_target_select",
+              "wall_ms": 0.057641000239527784,
+              "cuda_event_timeline_ms": 0.04864000156521797
+            },
+            {
+              "stage": "target_bfloat16_pack",
+              "wall_ms": 0.12482300007832237,
+              "cuda_event_timeline_ms": 0.11500799655914307
+            }
+          ],
+          "source_parity": {
+            "depth": {
+              "shape": [
+                1,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "future_depth": {
+              "shape": [
+                1,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "future_video": {
+              "shape": [
+                1,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "current_video": {
+              "shape": [
+                1,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "future_video_cls": {
+              "shape": [
+                1,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            }
+          }
+        }
+      },
+      "tiny_training_control": null
+    },
+    "4": {
+      "timings": [
+        {
+          "repeat": 0,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 242.60745200081146,
+          "cuda_event_timeline_ms": 242.56678771972656,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 1,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 241.33344900110387,
+          "cuda_event_timeline_ms": 241.30429077148438,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 2,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 239.22808700081077,
+          "cuda_event_timeline_ms": 239.17852783203125,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 3,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 237.75186199964082,
+          "cuda_event_timeline_ms": 237.70883178710938,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 4,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 239.38179099968693,
+          "cuda_event_timeline_ms": 239.34658813476562,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 5,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 239.39542999869445,
+          "cuda_event_timeline_ms": 239.35714721679688,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 6,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 238.09642999913194,
+          "cuda_event_timeline_ms": 238.06614685058594,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 7,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 239.05428199941525,
+          "cuda_event_timeline_ms": 239.02685546875,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 8,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 239.51437399955466,
+          "cuda_event_timeline_ms": 239.4824676513672,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 9,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 238.7258449998626,
+          "cuda_event_timeline_ms": 238.69778442382812,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 10,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 238.82737699932477,
+          "cuda_event_timeline_ms": 238.7998046875,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        },
+        {
+          "repeat": 11,
+          "position": 0,
+          "variant": "baseline",
+          "wall_ms": 238.35230499935278,
+          "cuda_event_timeline_ms": 238.32371520996094,
+          "allocated_before_bytes": 2261081600,
+          "peak_allocated_bytes": 3399012352,
+          "peak_reserved_bytes": 3525312512
+        }
+      ],
+      "target_comparisons": {
+        "source_vs_copied_baseline": {
+          "depth": {
+            "shape": [
+              4,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "future_depth": {
+            "shape": [
+              4,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "future_video": {
+            "shape": [
+              4,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "current_video": {
+            "shape": [
+              4,
+              256,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          },
+          "future_video_cls": {
+            "shape": [
+              4,
+              1024
+            ],
+            "exact": true,
+            "max_abs": 0.0,
+            "mean_abs": 0.0,
+            "relative_l2": 0.0
+          }
+        }
+      },
+      "diagnostics": {
+        "baseline": {
+          "stages": [
+            {
+              "stage": "input_transfer",
+              "wall_ms": 0.10315200051991269,
+              "cuda_event_timeline_ms": 0.09574399888515472
+            },
+            {
+              "stage": "current_depth.recover_shift.uv",
+              "wall_ms": 0.15194400111795403,
+              "cuda_event_timeline_ms": 0.14127999544143677
+            },
+            {
+              "stage": "current_depth.recover_shift.points_interpolate",
+              "wall_ms": 0.1236829994013533,
+              "cuda_event_timeline_ms": 0.11219199746847153
+            },
+            {
+              "stage": "current_depth.recover_shift.points_D2H",
+              "wall_ms": 0.12149299982411321,
+              "cuda_event_timeline_ms": 0.11052799969911575
+            },
+            {
+              "stage": "current_depth.recover_shift.uv_interpolate",
+              "wall_ms": 0.11757300126191694,
+              "cuda_event_timeline_ms": 0.10700800269842148
+            },
+            {
+              "stage": "current_depth.recover_shift.uv_D2H",
+              "wall_ms": 0.08775199967203662,
+              "cuda_event_timeline_ms": 0.07760000228881836
+            },
+            {
+              "stage": "current_depth.recover_shift.mask_interpolate",
+              "wall_ms": 0.12131299990869593,
+              "cuda_event_timeline_ms": 0.11161600053310394
+            },
+            {
+              "stage": "current_depth.recover_shift.mask_D2H",
+              "wall_ms": 0.08119199992506765,
+              "cuda_event_timeline_ms": 0.07062400132417679
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_sample_0",
+              "wall_ms": 1.8282049986737547,
+              "cuda_event_timeline_ms": 1.8149759769439697
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_sample_1",
+              "wall_ms": 1.619790000404464,
+              "cuda_event_timeline_ms": 1.6072319746017456
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_sample_2",
+              "wall_ms": 1.6034099990065442,
+              "cuda_event_timeline_ms": 1.590783953666687
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_sample_3",
+              "wall_ms": 1.5903500006970717,
+              "cuda_event_timeline_ms": 1.5768959522247314
+            },
+            {
+              "stage": "current_depth.recover_shift.scipy_batch",
+              "wall_ms": 6.828649000453879,
+              "cuda_event_timeline_ms": 6.8191680908203125
+            },
+            {
+              "stage": "current_depth.recover_shift.shift_H2D",
+              "wall_ms": 0.09806200068851467,
+              "cuda_event_timeline_ms": 0.08860799670219421
+            },
+            {
+              "stage": "current_depth.moge_including_recovery",
+              "wall_ms": 38.036362999264384,
+              "cuda_event_timeline_ms": 38.026432037353516
+            },
+            {
+              "stage": "current_depth.nan_to_num",
+              "wall_ms": 0.08332300058100373,
+              "cuda_event_timeline_ms": 0.07280000299215317
+            },
+            {
+              "stage": "current_depth.rgbd_features",
+              "wall_ms": 47.59227000067767,
+              "cuda_event_timeline_ms": 47.58009719848633
+            },
+            {
+              "stage": "future_depth.recover_shift.uv",
+              "wall_ms": 0.15035400065244175,
+              "cuda_event_timeline_ms": 0.13977600634098053
+            },
+            {
+              "stage": "future_depth.recover_shift.points_interpolate",
+              "wall_ms": 0.11777300096582621,
+              "cuda_event_timeline_ms": 0.10665600001811981
+            },
+            {
+              "stage": "future_depth.recover_shift.points_D2H",
+              "wall_ms": 0.11036300020350609,
+              "cuda_event_timeline_ms": 0.10070399940013885
+            },
+            {
+              "stage": "future_depth.recover_shift.uv_interpolate",
+              "wall_ms": 0.11822300075436942,
+              "cuda_event_timeline_ms": 0.10787200182676315
+            },
+            {
+              "stage": "future_depth.recover_shift.uv_D2H",
+              "wall_ms": 0.08524199984094594,
+              "cuda_event_timeline_ms": 0.07555200159549713
+            },
+            {
+              "stage": "future_depth.recover_shift.mask_interpolate",
+              "wall_ms": 0.12249300016264897,
+              "cuda_event_timeline_ms": 0.11241599917411804
+            },
+            {
+              "stage": "future_depth.recover_shift.mask_D2H",
+              "wall_ms": 0.09053199937625322,
+              "cuda_event_timeline_ms": 0.07993599772453308
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_sample_0",
+              "wall_ms": 1.6564710003876826,
+              "cuda_event_timeline_ms": 1.6429120302200317
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_sample_1",
+              "wall_ms": 1.5551779997622361,
+              "cuda_event_timeline_ms": 1.5426239967346191
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_sample_2",
+              "wall_ms": 1.6140099996846402,
+              "cuda_event_timeline_ms": 1.6007360219955444
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_sample_3",
+              "wall_ms": 1.546548999613151,
+              "cuda_event_timeline_ms": 1.5335040092468262
+            },
+            {
+              "stage": "future_depth.recover_shift.scipy_batch",
+              "wall_ms": 6.556272001034813,
+              "cuda_event_timeline_ms": 6.547999858856201
+            },
+            {
+              "stage": "future_depth.recover_shift.shift_H2D",
+              "wall_ms": 0.09461300032853615,
+              "cuda_event_timeline_ms": 0.08508799970149994
+            },
+            {
+              "stage": "future_depth.moge_including_recovery",
+              "wall_ms": 33.46088900070754,
+              "cuda_event_timeline_ms": 33.44960021972656
+            },
+            {
+              "stage": "future_depth.nan_to_num",
+              "wall_ms": 0.07559200093965046,
+              "cuda_event_timeline_ms": 0.06649599969387054
+            },
+            {
+              "stage": "future_depth.rgbd_features",
+              "wall_ms": 40.60263500105066,
+              "cuda_event_timeline_ms": 40.590049743652344
+            },
+            {
+              "stage": "video_input",
+              "wall_ms": 0.4065200009790715,
+              "cuda_event_timeline_ms": 0.3947199881076813
+            },
+            {
+              "stage": "dino_video",
+              "wall_ms": 80.77959199908946,
+              "cuda_event_timeline_ms": 80.76367950439453
+            },
+            {
+              "stage": "video_target_select",
+              "wall_ms": 0.08459199852950405,
+              "cuda_event_timeline_ms": 0.07478400319814682
+            },
+            {
+              "stage": "target_bfloat16_pack",
+              "wall_ms": 0.15087400061020162,
+              "cuda_event_timeline_ms": 0.14057600498199463
+            }
+          ],
+          "source_parity": {
+            "depth": {
+              "shape": [
+                4,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "future_depth": {
+              "shape": [
+                4,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "future_video": {
+              "shape": [
+                4,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "current_video": {
+              "shape": [
+                4,
+                256,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            },
+            "future_video_cls": {
+              "shape": [
+                4,
+                1024
+              ],
+              "exact": true,
+              "max_abs": 0.0,
+              "mean_abs": 0.0,
+              "relative_l2": 0.0
+            }
+          }
+        }
+      },
+      "tiny_training_control": null
+    }
+  },
+  "timing_note": "Uninstrumented synchronized totals are primary. Diagnostic rows overlap and cannot be summed. CUDA event intervals include idle time during CPU recovery; use profiler kernels for GPU work."
+}
