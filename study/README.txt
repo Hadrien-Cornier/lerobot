@@ -35,8 +35,8 @@ Keep batch size, pixels, precision, FPS, device and weights equal.
 Report the complete teacher time and the complete training step separately.
 
 Authorization
-The paid compute budget remains pending. No GPU experiment runs yet.
-Launch experiments through orx exp run after the user selects the compute budget.
+The user authorizes a 10 USD total compute budget for Hugging Face Jobs.
+Launch experiments through orx exp run within the recorded timeout reservations.
 Do not create a PR or post a speculative performance comment.
 
 Evidence

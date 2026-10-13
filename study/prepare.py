@@ -211,7 +211,7 @@ def upload_outputs(work):
         source=str(work),
         dest=destination,
         delete=False,
-        exclude=["hub-cache", "hub-cache/**", "venv", "venv/**"],
+        exclude=["hub-cache", "hub-cache/**", "venv", "venv/**", "full-assets", "full-assets/**"],
         quiet=True,
     )
     (work / "artifact-destination.txt").write_text(destination + "\n")

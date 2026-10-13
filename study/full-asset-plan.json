@@ -1,0 +1,195 @@
+{
+  "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+  "assets": [
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "chat_template_tokenizer/chat_template.jinja",
+      "size": 5292,
+      "sha256": null,
+      "git_blob_sha1": "124386803f142761528f710e77ae483f5f8c4fc4"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "chat_template_tokenizer/tokenizer.json",
+      "size": 11422650,
+      "sha256": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+      "git_blob_sha1": "c7afbed2efcdf019f88ab0572ec29d3bf595dfe2"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "chat_template_tokenizer/tokenizer_config.json",
+      "size": 665,
+      "sha256": null,
+      "git_blob_sha1": "501f11b5cc0dc8fe192b3291503d71dbde03fd7a"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "config.json",
+      "size": 6388,
+      "sha256": null,
+      "git_blob_sha1": "f7933b65a701ed2b2f3b50d0a3ad5e884d652d60"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "image_processor/preprocessor_config.json",
+      "size": 442,
+      "sha256": null,
+      "git_blob_sha1": "a01b6d4ddd32904e0e9d390d61093e91ed107420"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "model.safetensors",
+      "size": 25503891644,
+      "sha256": "bcd62f119416cd607f5584adceefdf7b74427a62a03cd43251f221620fea6c64",
+      "git_blob_sha1": "3c2c59f50dd35c254f96a7d9054f9e71bb1f838a"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "policy_postprocessor.json",
+      "size": 1958,
+      "sha256": null,
+      "git_blob_sha1": "b538a209c66d12a3bc4ffe727560e420bb2b8d1b"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "policy_preprocessor.json",
+      "size": 4915,
+      "sha256": null,
+      "git_blob_sha1": "cbd92a78a4c7385048e746e57550bd60d25f89ab"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "tokenizer/chat_template.jinja",
+      "size": 5292,
+      "sha256": null,
+      "git_blob_sha1": "124386803f142761528f710e77ae483f5f8c4fc4"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "tokenizer/tokenizer.json",
+      "size": 11422650,
+      "sha256": "be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506",
+      "git_blob_sha1": "c7afbed2efcdf019f88ab0572ec29d3bf595dfe2"
+    },
+    {
+      "repo_id": "lerobot/lingbot_vla_v2_base",
+      "repo_type": "model",
+      "revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+      "filename": "tokenizer/tokenizer_config.json",
+      "size": 665,
+      "sha256": null,
+      "git_blob_sha1": "501f11b5cc0dc8fe192b3291503d71dbde03fd7a"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "data/chunk-000/file-000.parquet",
+      "size": 3547097,
+      "sha256": "11d87b057576f283b4a3a875a9523adbede7dc3ffc063ca4aedd339728238b7a",
+      "git_blob_sha1": "c54fd751ff04ec28c50f2cfaa0e4b0cf3eb3b124"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "meta/episodes/chunk-000/file-000.parquet",
+      "size": 333304,
+      "sha256": "c97599850c94f9f6cdc340d7deddff4a77452dc2792fba6ab490e4634994b2c6",
+      "git_blob_sha1": "77174d4b146d5cfd02d05a4d6a53930d62379dfc"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "meta/info.json",
+      "size": 3229,
+      "sha256": null,
+      "git_blob_sha1": "c77a28307918e61855bc848a5c690b8203b0bc03"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "meta/stats.json",
+      "size": 13079,
+      "sha256": null,
+      "git_blob_sha1": "dfaa97f61f70f3ba4159a85897bcfca9cb29963a"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "meta/tasks.parquet",
+      "size": 2303,
+      "sha256": "a4173d7bdfc104dbc40d99b4a2c747a384b15c555a2034190f4f2239c3e904db",
+      "git_blob_sha1": "853e0b7e42f51ad77ae12aaad8c77dbe90669517"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "videos/observation.images.top/chunk-000/file-000.mp4",
+      "size": 96836277,
+      "sha256": "e130496b4e190f7657691ac9910e74eda3de006fbfaccc811acd4b9d243bb67d",
+      "git_blob_sha1": "8488e3ab64e17f8f242fe3e376a630aa72a9828e"
+    },
+    {
+      "repo_id": "maximellerbach/omx_multicubes",
+      "repo_type": "dataset",
+      "revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+      "filename": "videos/observation.images.wrist/chunk-000/file-000.mp4",
+      "size": 208644416,
+      "sha256": "c13aa1312c024604dfac4ae4a1e4b1f7229944b84c6cbb3947d7ac361538e6ac",
+      "git_blob_sha1": "f9d54a2dc5e052edb500d8ed9eec0b2bd1982c8c"
+    },
+    {
+      "repo_id": "Qwen/Qwen3-VL-4B-Instruct",
+      "repo_type": "model",
+      "revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+      "filename": "config.json",
+      "size": 1505,
+      "sha256": null,
+      "git_blob_sha1": "22be8bb79043d39840ca5e70d7a2dab80311602c",
+      "local_folder": "qwen-config"
+    }
+  ],
+  "source_sha256": {
+    "src/lerobot/scripts/lerobot_train.py": "fae4152f57400d64dc9f4ed5999242866b1e94775a6fc7b5c489118d8acba66e",
+    "src/lerobot/policies/factory.py": "16d58386674759814f3fbd3174f71a0750bcd92cfb34a9d3f29113dd69b9d4bc",
+    "src/lerobot/policies/pretrained.py": "47be2c517d53da3dcc449f3858ec9bd93e45b5c1e5a7b307a41c3cf83d8d5d0b",
+    "src/lerobot/policies/lingbot_vla_v2/modeling_lingbot_vla_v2.py": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+    "src/lerobot/policies/lingbot_vla_v2/processor_lingbot_vla_v2.py": "1609cf8beb5d80690562df5432a39ffc29c818a82c4e8e1ff8388f52440b37f6",
+    "src/lerobot/policies/lingbot_vla_v2/configuration_lingbot_vla_v2.py": "0b0f44f79aeb8cdfe48995c75433b5b4e3dc3e3273e04ec9cbc109ccc8523ce3",
+    "src/lerobot/datasets/factory.py": "713aed1981af352d1306c75181eef878c39eb406d2e9d3b4d462b202ce66ca4e",
+    "src/lerobot/optim/optimizers.py": "a7a5c282c88973c08d4f947b831f8dab679d2347f0fcca18283377af792fe957",
+    "src/lerobot/optim/schedulers.py": "dbbe9ca43c914954ddf00dcb4589df9be8f21b17cdeb19af6bc44509e499bf6d",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/depth_teachers.py": "3ed6f98fc0720b2c1e51cbb5f70fbe2a5ac5ecb64495c9d30ed6f0905e58b0c7",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/video_teacher.py": "9434178a501eb4b9db9e6799ee8903d475e1a9bb4aaf4ff1e052d93cb4125115",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/qwen2_action_expert.py": "f49290d690eab8f01594a10af435cb1fb5f62ac0102352eb28c3b75f3c4c7869",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/modeling_lingbot_vla_v2_base.py": "ec7176044cad46f0b52d7623fed7b512e9c8d712b55f452726e1374d875f5cac",
+    "src/lerobot/policies/lingbot_vla_v2/model_core/align_heads.py": "4617889e281e89ff28d891de3086bfb7cfb9485b05ba0fb6892c488e46733661"
+  },
+  "scope": "Metadata only. No policy, teacher, tokenizer payload, or dataset payload download occurs.",
+  "comparison_module_sha256": "4dc1cadfe56bc7b2c110ad16f51c58db015ec24bc6d3e59fee82679e1f36a94b"
+}
