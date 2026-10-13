@@ -33,19 +33,17 @@ def verify_patch_sources(repo):
         ".to(device).eval()\n"
     )
     new = (
-        '        self.moge = load_depth_teacher(MoGe2, _teacher_file(params, "moge")).eval()\n'
-        '        self.morgbd = load_depth_teacher(MoRGBDEncoder, _teacher_file(params, "morgbd")).eval()\n'
-    )
-    added = (
-        "        if self.mixed:\n"
-        "            # Store the precision each frozen Linear/Conv2d uses under CUDA autocast.\n"
-        "            for model, dtype in ((self.moge, torch.float16), (self.morgbd, torch.bfloat16)):\n"
+        "\n"
+        "        def load_depth(cls: type[nn.Module], key: str, dtype: torch.dtype) -> nn.Module:\n"
+        "            model = load_depth_teacher(cls, _teacher_file(params, key)).eval()\n"
+        "            if self.mixed:\n"
         "                for module in model.modules():\n"
         "                    if isinstance(module, (nn.Linear, nn.Conv2d)):\n"
         "                        module.to(dtype=dtype)\n"
-        "        self.moge.to(device)\n"
-        "        self.morgbd.to(device)\n"
+        "            return model.to(device)\n"
         "\n"
+        '        self.moge = load_depth(MoGe2, "moge", torch.float16)\n'
+        '        self.morgbd = load_depth(MoRGBDEncoder, "morgbd", torch.bfloat16)\n'
     )
     rows = {}
     for relative, item in manifest["files"].items():
@@ -55,9 +53,6 @@ def verify_patch_sources(repo):
         if relative.endswith("/modeling_lingbot_vla_v2.py"):
             assert expected.count(old) == 1
             expected = expected.replace(old, new)
-            anchor = "    def depth(self, images: Tensor) -> Tensor:"
-            assert expected.count(anchor) == 1
-            expected = expected.replace(anchor, added + anchor)
         actual = repo / relative
         assert actual.read_text() == expected, relative
         rows[relative] = sha256_file(actual)
