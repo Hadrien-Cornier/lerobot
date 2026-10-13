@@ -1983,6 +1983,13 @@ class DistillationTeachers:
             video.periods.data, video.periods_t.data = (p.to(device) for p in periods)  # RoPE stays fp32
             self.video = video
 
+        if self.mixed:
+            # Store the precision each frozen Linear/Conv2d uses under CUDA autocast.
+            for model, dtype in ((self.moge, torch.float16), (self.morgbd, torch.bfloat16)):
+                for module in model.modules():
+                    if isinstance(module, (nn.Linear, nn.Conv2d)):
+                        module.to(dtype=dtype)
+
     def depth(self, images: Tensor) -> Tensor:
         depth = self.moge.depth(images, use_fp16=self.mixed)
         depth = torch.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0)
