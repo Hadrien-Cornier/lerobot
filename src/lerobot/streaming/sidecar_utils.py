@@ -19,7 +19,7 @@ from collections.abc import Generator
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import closing
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, cast
 from zipfile import BadZipFile, ZipFile
 
 import numpy as np
@@ -27,7 +27,7 @@ from filelock import FileLock
 from huggingface_hub.constants import HF_HOME
 from numpy.typing import NDArray
 
-from lerobot.streaming.mp4 import Mp4Index
+from lerobot.streaming.mp4 import IntegerArray, Mp4Index, _compact_integer_array
 
 ARRAY_NAMES = (
     "sample_pts",
@@ -37,7 +37,8 @@ ARRAY_NAMES = (
     "sample_offsets",
     "sync_samples",
 )
-_MAGIC = b"LRIDX001"
+_MAGIC = b"LRIDX002"
+_CACHE_VERSION = 2
 
 
 def _content_digest(source: BinaryIO) -> str:
@@ -68,7 +69,8 @@ def _cache_path(path: Path, signature: tuple[int | str, ...] | None = None) -> P
             signature = _signature(os.fstat(source.fileno()), _content_digest(source))
     digest = hashlib.sha256(repr(signature).encode()).hexdigest()[:24]
     cache_root = Path(os.environ.get("HF_LEROBOT_HOME", str(Path(HF_HOME) / "lerobot"))).expanduser()
-    return cache_root / "streaming-indexes" / f"mp4-{digest}.bin"
+    # Older processes must not find narrow arrays through the schema 3 cache path.
+    return cache_root / "streaming-indexes" / "v2" / f"mp4-{digest}.bin"
 
 
 def _read_metadata(path: Path) -> dict[str, Any]:
@@ -84,6 +86,7 @@ def _read_metadata(path: Path) -> dict[str, Any]:
     if (
         not isinstance(payload, dict)
         or payload.get("version") != 3
+        or payload.get("cache_version") != _CACHE_VERSION
         or not isinstance(payload.get("sidecar"), dict)
         or not isinstance(payload.get("files"), list)
     ):
@@ -246,14 +249,19 @@ def mapped_sidecar(path: Path, *, workers: int = 4) -> tuple[Path, dict[str, Any
                             for arrays in records:
                                 item = next(items)
                                 item["arrays"] = {}
-                                for name, array in arrays.items():
+                                for name in ARRAY_NAMES:
+                                    array = arrays.pop(name)
+                                    if name != "sample_pts" and array.dtype.kind in "iu":
+                                        array = _compact_integer_array(cast(IntegerArray, array))
                                     out.write(b"\0" * (-out.tell() % 8))
                                     item["arrays"][name] = [out.tell(), array.size, array.dtype.str]
                                     out.write(array.tobytes())
-                                # zip/enumerate retain a tuple with the previous arrays.
-                                del arrays, array
+                                    # Release this array before the next member.
+                                    del array
+                                del arrays
                         if _signature(os.fstat(source.fileno()), content) != signature:
                             raise OSError("MP4 sidecar changed during index conversion")
+                        payload["cache_version"] = _CACHE_VERSION
                         metadata = json.dumps(payload, separators=(",", ":")).encode()
                         out.write(metadata)
                         out.write(len(metadata).to_bytes(8, "little"))

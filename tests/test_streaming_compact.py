@@ -6,12 +6,16 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 
+import json
+import weakref
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
 
+from lerobot.streaming import sidecar_utils
 from lerobot.streaming.manifest import EpisodeVideoManifest, VideoFileRecord
 from lerobot.streaming.mp4 import (
     _compact_integer_array,
@@ -21,6 +25,11 @@ from lerobot.streaming.mp4 import (
 )
 from lerobot.streaming.sidecar import SidecarSpec
 from tests.datasets.test_episode_video_streaming import _minimal_mp4
+
+
+@pytest.fixture(autouse=True)
+def isolated_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HF_LEROBOT_HOME", str(tmp_path / "cache"))
 
 
 @pytest.mark.parametrize(
@@ -131,3 +140,98 @@ def test_sidecar_keeps_compact_arrays_and_exact_float_timestamps(tmp_path: Path)
         assert actual.dtype == expected.dtype
         assert not actual.flags.writeable
         np.testing.assert_array_equal(actual, expected)
+
+
+@pytest.mark.parametrize("entry_point", ["save", "build"])
+def test_schema_three_archive_keeps_old_reader_integer_contract(tmp_path: Path, entry_point: str) -> None:
+    data = _minimal_mp4([10000, 10010, 10020])
+    source = tmp_path / "test.mp4"
+    source.write_bytes(data)
+    index = parse_mp4_index(source.name, data)
+    spec = SidecarSpec("test/compact", "rev", str(tmp_path), ((source.name, len(data)),))
+    output = tmp_path / "index.npz"
+    if entry_point == "save":
+        EpisodeVideoManifest.save_file_sidecar(
+            output, [VideoFileRecord(source.name, len(data), index)], spec=spec
+        )
+    else:
+        EpisodeVideoManifest.write_file_sidecar(
+            output, [source.name], tmp_path, spec=spec, range_backend="fsspec", workers=2
+        )
+    with np.load(output, allow_pickle=False) as archive:
+        assert json.loads(bytes(archive["manifest_json"]))["version"] == 3
+        for name in sidecar_utils.ARRAY_NAMES:
+            array = archive[f"0/{name}"]
+            assert array.dtype == (np.float64 if name == "sample_pts" else np.int64)
+            np.testing.assert_array_equal(array, getattr(index, name))
+
+
+def test_canonical_writer_releases_each_widened_array(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    index = parse_mp4_index("test.mp4", _minimal_mp4([10000, 10010, 10020]))
+    record = VideoFileRecord(index.file_path, index.file_size, index)
+    spec = SidecarSpec("test/compact", "rev", str(tmp_path), ((record.file_path, record.file_size),))
+    original = np.lib.format.write_array
+    references = []
+
+    def write(member: Any, array: np.ndarray, *args: Any, **kwargs: Any) -> None:
+        assert all(ref() is None for ref in references), "The writer retains a previous widened array"
+        if array.dtype == np.int64:
+            references.append(weakref.ref(array))
+        original(member, array, *args, **kwargs)
+
+    monkeypatch.setattr(np.lib.format, "write_array", write)
+    EpisodeVideoManifest.save_file_sidecar(tmp_path / "index.npz", [record], spec=spec)
+    assert len(references) == 5
+    assert all(ref() is None for ref in references)
+
+
+@pytest.mark.parametrize("invalid", [np.array([2**63] * 3, dtype=np.uint64), np.array([0.5] * 3)])
+def test_canonical_writer_rejects_lossy_conversion_and_preserves_output(
+    tmp_path: Path, invalid: np.ndarray
+) -> None:
+    index = parse_mp4_index("test.mp4", _minimal_mp4([10000, 10010, 10020]))
+    record = VideoFileRecord(index.file_path, index.file_size, index)
+    spec = SidecarSpec("test/compact", "rev", str(tmp_path), ((record.file_path, record.file_size),))
+    path = tmp_path / "index.npz"
+    EpisodeVideoManifest.save_file_sidecar(path, [record], spec=spec)
+    before = path.read_bytes()
+    invalid_record = replace(record, mp4=replace(index, sample_offsets=invalid))
+    with pytest.raises(ValueError, match="integers|exceeds int64"):
+        EpisodeVideoManifest.save_file_sidecar(path, [invalid_record], spec=spec)
+    assert path.read_bytes() == before
+    assert not list(tmp_path.glob("*.tmp.npz"))
+
+
+def test_new_mapping_compacts_legacy_archive_and_isolates_old_cache(tmp_path: Path) -> None:
+    index = parse_mp4_index("test.mp4", _minimal_mp4([65520, 65525, 65530]))
+    spec = SidecarSpec("test/compact", "rev", str(tmp_path), ((index.file_path, index.file_size),))
+    payload = {
+        "version": 3,
+        "sidecar": spec.to_dict(),
+        "files": [{"file_path": index.file_path, "file_size": index.file_size, "mp4": index.to_dict()}],
+    }
+    arrays = {
+        f"0/{name}": getattr(index, name).astype(np.float64 if name == "sample_pts" else np.int64)
+        for name in sidecar_utils.ARRAY_NAMES
+    }
+    path = tmp_path / "legacy.npz"
+    np.savez_compressed(path, manifest_json=json.dumps(payload).encode(), **arrays)
+    new_cache = sidecar_utils._cache_path(path)
+    old_cache = new_cache.parent.parent / new_cache.name
+    old_cache.parent.mkdir(parents=True, exist_ok=True)
+    old_cache.write_bytes(b"legacy process cache")
+    cache, metadata = sidecar_utils.mapped_sidecar(path)
+    assert cache == new_cache
+    assert cache.parent.name == "v2"
+    assert cache != old_cache
+    assert cache.read_bytes()[-8:] == b"LRIDX002"
+    assert metadata["cache_version"] == 2
+    assert old_cache.read_bytes() == b"legacy process cache"
+    loaded = EpisodeVideoManifest.load_file_sidecar(path)[index.file_path].mp4
+    assert loaded.sample_offsets.dtype == np.uint16
+    assert loaded.sample_slice(0, 2, keyframe_pad_s=0, keyframe_pad_fraction=0).byte_length == 20
+    assert loaded.sample_pts.tobytes() == index.sample_pts.tobytes()
+    for name in sidecar_utils.ARRAY_NAMES:
+        np.testing.assert_array_equal(getattr(loaded, name), getattr(index, name))

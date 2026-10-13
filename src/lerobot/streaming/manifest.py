@@ -372,8 +372,24 @@ class EpisodeVideoManifest:
                         "mp4": record.mp4.to_dict(),
                     }
                     for name in ARRAY_NAMES:
+                        array = getattr(record.mp4, name)
+                        if name == "sample_pts":
+                            if array.dtype.kind != "f" or array.dtype.itemsize != 8:
+                                raise ValueError("MP4 presentation timestamps must be float64")
+                        else:
+                            if array.dtype.kind not in "iu":
+                                raise ValueError(f"MP4 sample array must contain integers: {name}")
+                            if (
+                                array.dtype.kind == "u"
+                                and array.size
+                                and int(array.max()) > np.iinfo(np.int64).max
+                            ):
+                                raise ValueError(f"MP4 sample array exceeds int64: {name}")
+                            # Schema 3 readers use int64 arithmetic. Widen only this member.
+                            array = array.astype(np.int64, copy=False)
                         with archive.open(f"{file_idx}/{name}.npy", "w", force_zip64=True) as member:
-                            np.lib.format.write_array(member, getattr(record.mp4, name), allow_pickle=False)
+                            np.lib.format.write_array(member, array, allow_pickle=False)
+                        del array
                     del record
                 ordered_files = [files[file_idx] for file_idx in sorted(files)]
                 payload = {
