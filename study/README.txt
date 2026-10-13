@@ -1,14 +1,17 @@
-Teacher stage baseline for LeRobot PR #4897
+Teacher source patch verification for LeRobot PR #4897
 
 Purpose
 Find one material improvement with actual teacher weights and measured time.
-The PR source stays at f58f7fb9dbb241304df96e967aea0f5b42ff9a4d.
-This experiment changes research files only.
+The original source snapshot stays at f58f7fb9dbb241304df96e967aea0f5b42ff9a4d.
+This child changes only the depth teacher constructor and research files.
+It stores frozen Linear and Conv2d weights at their CUDA autocast precision.
+It converts these weights on the CPU before the GPU transfer.
 
 Managed experiment
 Project: 7ff15cc9-44cc-4017-8dce-f39efcfd0610
-Baseline: bb853371-fbe6-4bd0-946a-e880c0352fc8
-Branch: orx/teacher-stage-baseline
+Experiment: 91c3608c-5a4c-48b9-99dd-2bd20f737122
+Parent: 093a3ebc-124c-4c9d-9267-b0c83fa85c9d
+Branch: orx/teacher-precast-before-cuda-transfer
 Fixed command: bash study/run.sh
 
 Inputs and checks
@@ -20,11 +23,11 @@ The processor uses float32 pixels, v2 resize with antialias, and uint8 quantizat
 The effective FPS uses float32(30/49).
 
 Measurements
-The original teacher function supplies the primary synchronized wall time.
-Separate runs supply diagnostic stages and a CUDA profiler trace.
-Diagnostic stages overlap. Do not add their times.
-CUDA event intervals include idle time during the CPU solver.
-Inspect profiler kernels to measure GPU work.
+The original teacher class supplies the control through its pinned source snapshot.
+The changed constructor supplies the candidate.
+Check all teacher parameters, buffers and targets before paired time measurements.
+Measure constructor memory with only one teacher bundle on the GPU.
+Record paired teacher time separately from profiler traces.
 Record allocated memory separately from allocator reservations.
 
 Next experiment
@@ -35,8 +38,9 @@ Keep batch size, pixels, precision, FPS, device and weights equal.
 Report the complete teacher time and the complete training step separately.
 
 Authorization
-The paid compute budget remains pending. No GPU experiment runs yet.
-Launch experiments through orx exp run after the user selects the compute budget.
+The user authorizes a total compute budget of 10 USD.
+Reserve each run in the workspace budget ledger before its launch.
+Launch experiments through orx exp run.
 Do not create a PR or post a speculative performance comment.
 
 Evidence

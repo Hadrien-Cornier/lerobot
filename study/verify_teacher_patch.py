@@ -27,13 +27,25 @@ def verify_patch_sources(repo):
     """Require the original snapshot plus only the proposed constructor addition."""
     snapshot = Path(__file__).resolve().parent / "source-snapshot"
     manifest = json.loads((snapshot / "manifest.json").read_text())
+    old = (
+        '        self.moge = load_depth_teacher(MoGe2, _teacher_file(params, "moge")).to(device).eval()\n'
+        '        self.morgbd = load_depth_teacher(MoRGBDEncoder, _teacher_file(params, "morgbd"))'
+        ".to(device).eval()\n"
+    )
+    new = (
+        '        self.moge = load_depth_teacher(MoGe2, _teacher_file(params, "moge")).eval()\n'
+        '        self.morgbd = load_depth_teacher(MoRGBDEncoder, _teacher_file(params, "morgbd")).eval()\n'
+    )
     added = (
         "        if self.mixed:\n"
         "            # Store the precision each frozen Linear/Conv2d uses under CUDA autocast.\n"
         "            for model, dtype in ((self.moge, torch.float16), (self.morgbd, torch.bfloat16)):\n"
         "                for module in model.modules():\n"
         "                    if isinstance(module, (nn.Linear, nn.Conv2d)):\n"
-        "                        module.to(dtype=dtype)\n\n"
+        "                        module.to(dtype=dtype)\n"
+        "        self.moge.to(device)\n"
+        "        self.morgbd.to(device)\n"
+        "\n"
     )
     rows = {}
     for relative, item in manifest["files"].items():
@@ -41,6 +53,8 @@ def verify_patch_sources(repo):
         assert sha256_file(original_path) == item["sha256"]
         expected = original_path.read_text()
         if relative.endswith("/modeling_lingbot_vla_v2.py"):
+            assert expected.count(old) == 1
+            expected = expected.replace(old, new)
             anchor = "    def depth(self, images: Tensor) -> Tensor:"
             assert expected.count(anchor) == 1
             expected = expected.replace(anchor, added + anchor)
@@ -117,6 +131,71 @@ def move(teachers, device):
             model.to(device)
 
 
+def parameter_buffer_parity(baseline, candidate):
+    """Check every teacher parameter and buffer against the original GPU model."""
+    rows = []
+    for name in ("moge", "morgbd", "video"):
+        original = getattr(baseline, name)
+        actual = getattr(candidate, name)
+        if original is None or actual is None:
+            assert original is actual, name
+            continue
+        module_types = {
+            module_name: module
+            for module_name, module in original.named_modules()
+            if isinstance(module, (torch.nn.Linear, torch.nn.Conv2d))
+        }
+        converted = {
+            f"{module_name}.{field}" if module_name else field
+            for module_name in module_types
+            for field in ("weight", "bias")
+            if getattr(module_types[module_name], field, None) is not None
+        }
+        if name == "video":
+            converted = set()
+        original_params = dict(original.named_parameters())
+        actual_params = dict(actual.named_parameters())
+        assert original_params.keys() == actual_params.keys(), (name, "parameter names")
+        cast_count = 0
+        max_parameter_diff = 0.0
+        for key, expected in original_params.items():
+            expected_dtype = expected.dtype
+            if key in converted:
+                expected_dtype = torch.float16 if name == "moge" else torch.bfloat16
+            expected_value = expected.to(dtype=expected_dtype)
+            observed = actual_params[key]
+            assert observed.dtype == expected_dtype, (name, key, observed.dtype, expected_dtype)
+            assert observed.stride() == expected_value.stride(), (name, key, "stride")
+            if not torch.equal(observed, expected_value):
+                difference = (observed.float() - expected_value.float()).abs().max().item()
+                max_parameter_diff = max(max_parameter_diff, difference)
+                raise AssertionError((name, key, "parameter value", difference))
+            cast_count += key in converted
+        original_buffers = dict(original.named_buffers())
+        actual_buffers = dict(actual.named_buffers())
+        assert original_buffers.keys() == actual_buffers.keys(), (name, "buffer names")
+        max_buffer_diff = 0.0
+        for key, expected in original_buffers.items():
+            observed = actual_buffers[key]
+            assert observed.dtype == expected.dtype, (name, key, "buffer dtype")
+            assert observed.stride() == expected.stride(), (name, key, "buffer stride")
+            if not torch.equal(observed, expected):
+                difference = (observed.float() - expected.float()).abs().max().item()
+                max_buffer_diff = max(max_buffer_diff, difference)
+                raise AssertionError((name, key, "buffer value", difference))
+        rows.append(
+            dict(
+                teacher=name,
+                parameters=len(original_params),
+                parameters_cast=cast_count,
+                buffers=len(original_buffers),
+                max_parameter_abs_diff=max_parameter_diff,
+                max_buffer_abs_diff=max_buffer_diff,
+            )
+        )
+    return rows
+
+
 def call_for(name, teachers, current, future, fps):
     """Return the original source call except for the explicit joint-depth variant."""
     if name == "joint_depth":
@@ -159,8 +238,29 @@ def main():
     params = copy.deepcopy(config["align_params"])
     params["depth"].update(moge_path=paths["moge"], morgbd_path=paths["morgbd"])
     params["video"].update(ckpt_path=paths["video"], config_path=paths["video_config"])
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats(device)
     baseline = original_teacher_class(modeling)(params, device)
+    torch.cuda.synchronize(device)
+    baseline_initialization = dict(
+        peak_allocated_bytes=torch.cuda.max_memory_allocated(device),
+        peak_reserved_bytes=torch.cuda.max_memory_reserved(device),
+        current_allocated_bytes=torch.cuda.memory_allocated(device),
+    )
+    move(baseline, "cpu")
+    gc.collect()
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats(device)
     lower = modeling.DistillationTeachers(params, device)
+    torch.cuda.synchronize(device)
+    candidate_initialization = dict(
+        peak_allocated_bytes=torch.cuda.max_memory_allocated(device),
+        peak_reserved_bytes=torch.cuda.max_memory_reserved(device),
+        current_allocated_bytes=torch.cuda.memory_allocated(device),
+    )
+    move(baseline, device)
+    torch.cuda.synchronize(device)
+    parameter_rows = parameter_buffer_parity(baseline, lower)
     cast_rows = [
         {"teacher": name, "parameter_dtypes": sorted({str(p.dtype) for p in model.parameters()})}
         for name, model in (("moge", lower.moge), ("morgbd", lower.morgbd))
@@ -174,11 +274,20 @@ def main():
         source_sha256=source_hashes,
         config=config,
         precast=cast_rows,
+        initialization_memory=dict(
+            baseline=baseline_initialization,
+            precast_linear_conv=candidate_initialization,
+        ),
+        parameter_parity=parameter_rows,
         environment=dict(
             torch=torch.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(device)
         ),
         batches={},
-        timing_note="Paired randomized uninstrumented target calls. Diagnostic traces are separate.",
+        timing_note=(
+            "Paired randomized uninstrumented target calls after "
+            "initialization memory and parameter parity checks. "
+            "Diagnostic traces are separate."
+        ),
         memory_note=(
             "Primary timings retain two teachers. Isolated memory measurements retain only one on CUDA."
         ),

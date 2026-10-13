@@ -1969,8 +1969,8 @@ class DistillationTeachers:
         require_package("scipy", extra="scipy-dep")  # MoGe's focal/shift recovery
         self.params, self.device = params, device
         self.mixed = device.type == "cuda"
-        self.moge = load_depth_teacher(MoGe2, _teacher_file(params, "moge")).to(device).eval()
-        self.morgbd = load_depth_teacher(MoRGBDEncoder, _teacher_file(params, "morgbd")).to(device).eval()
+        self.moge = load_depth_teacher(MoGe2, _teacher_file(params, "moge")).eval()
+        self.morgbd = load_depth_teacher(MoRGBDEncoder, _teacher_file(params, "morgbd")).eval()
         self.video = None
         if params.get("use_future_video", False):
             video = load_video_teacher(
@@ -1989,6 +1989,8 @@ class DistillationTeachers:
                 for module in model.modules():
                     if isinstance(module, (nn.Linear, nn.Conv2d)):
                         module.to(dtype=dtype)
+        self.moge.to(device)
+        self.morgbd.to(device)
 
     def depth(self, images: Tensor) -> Tensor:
         depth = self.moge.depth(images, use_fp16=self.mixed)
