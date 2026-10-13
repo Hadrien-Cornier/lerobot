@@ -307,6 +307,8 @@ def test_singleton_and_empty_array_mappings_keep_shape_and_values(tmp_path: Path
         ("sample_offsets", lambda descriptor: descriptor.__setitem__(3, 4)),
         ("sample_durations", lambda descriptor: descriptor.__setitem__(0, 10**9)),
         ("sync_samples", lambda descriptor: descriptor.__setitem__(2, "|O")),
+        ("sync_samples", lambda descriptor: descriptor.__setitem__(1, 2**63)),
+        ("sync_samples", lambda descriptor: descriptor.__setitem__(slice(None), [0, 2**62, "<u8", 1])),
     ],
 )
 def test_invalid_v3_descriptors_are_recreated(tmp_path: Path, field: str, mutate: Any) -> None:
@@ -344,3 +346,44 @@ def test_constant_negative_composition_offsets_preserve_synthesis(tmp_path: Path
     assert loaded._has_composition_offsets
     assert synthesized_mp4_size(loaded, span) == len(synthesize_mp4(loaded, span, payload))
     assert synthesize_mp4(loaded, span, payload) == synthesize_mp4(dense, span, payload)
+
+
+def test_constant_converter_releases_record_before_next_oversized_read(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A stored view must not retain a compact array across record admission."""
+    index = parse_mp4_index("a.mp4", _minimal_mp4([10000, 10010, 10020]))
+    index = replace(index, sync_samples=np.array([0, 1, 2], dtype=np.int64))
+    records = [
+        VideoFileRecord(name, index.file_size, replace(index, file_path=name)) for name in ("a.mp4", "b.mp4")
+    ]
+    spec = SidecarSpec(
+        "test/lifetime",
+        "rev",
+        str(tmp_path),
+        tuple((record.file_path, record.file_size) for record in records),
+    )
+    path = tmp_path / "index.npz"
+    EpisodeVideoManifest.save_file_sidecar(path, records, spec=spec)
+    original_compact = sidecar_utils._compact_integer_array
+    original_read = sidecar_utils._read_arrays
+    original_iter = sidecar_utils._iter_arrays
+    references: list[weakref.ReferenceType[np.ndarray]] = []
+
+    def compact(array: np.ndarray) -> np.ndarray:
+        result = original_compact(array)
+        references.append(weakref.ref(result))
+        return result
+
+    def read(archive: Any, file_index: int, item: dict[str, Any]) -> dict[str, np.ndarray]:
+        assert all(reference() is None for reference in references), "Previous compact record retained"
+        return original_read(archive, file_index, item)
+
+    def small_budget(archive: Any, files: list[dict[str, Any]], *, workers: int) -> Any:
+        return original_iter(archive, files, workers=workers, max_pending_bytes=1)
+
+    monkeypatch.setattr(sidecar_utils, "_compact_integer_array", compact)
+    monkeypatch.setattr(sidecar_utils, "_read_arrays", read)
+    monkeypatch.setattr(sidecar_utils, "_iter_arrays", small_budget)
+    sidecar_utils.mapped_sidecar(path, workers=4)
+    assert all(reference() is None for reference in references)
