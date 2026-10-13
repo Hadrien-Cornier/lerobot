@@ -75,5 +75,5 @@ PY
 
 "$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/prepare.py" --work-root "$LINGBOT_WORK_DIR"
 "$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/prepare_full.py" --work-root "$LINGBOT_WORK_DIR"
-"$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/run_full_matrix.py" \
+"$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/run_native_controls.py" \
     --config "$LINGBOT_WORK_DIR/full-policy-runtime-template.json"

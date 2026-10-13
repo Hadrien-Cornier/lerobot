@@ -7,8 +7,8 @@ The parent must approve the candidate after a material teacher result.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
-import importlib.util
 import json
 import os
 import sys
@@ -180,49 +180,82 @@ def cli_arguments(config, teacher_config, out):
         "log_freq": 1,
         "output_dir": str(out / "train"),
         "policy.gradient_checkpointing": str(config["gradient_checkpointing"]).lower(),
+        "cudnn_deterministic": str(config.get("cudnn_deterministic", False)).lower(),
     }
     return [f"--{key}={value}" for key, value in values.items()]
 
 
-def install_teacher_variant(config, report):
-    """Cast the measured Linear/Conv2d weights once. Preserve native target construction."""
+def install_teacher_variant(config, report, out):
+    """Load the exact original or committed candidate class in the same module globals."""
     import torch
 
-    from lerobot.policies.lingbot_vla_v2.modeling_lingbot_vla_v2 import DistillationTeachers
+    import lerobot.policies.lingbot_vla_v2.modeling_lingbot_vla_v2 as modeling
 
-    original = DistillationTeachers.targets
-    original_init = DistillationTeachers.__init__
-    comparison_path = Path(config["comparison_module"])
-    if file_sha256(comparison_path) != config["comparison_module_sha256"]:
-        raise ValueError("The teacher comparison adapter differs from the measured source")
-    sys.path.insert(0, str(comparison_path.parent))
-    specification = importlib.util.spec_from_file_location("_lingbot_measured_comparison", comparison_path)
-    if specification is None or specification.loader is None:
-        raise ValueError("Cannot load the measured teacher comparison adapter")
-    comparison = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(comparison)
-
-    if config["variant"] == "precast_linear_conv":
-
-        @wraps(original_init)
-        def initialize(self, *args, **kwargs):
-            original_init(self, *args, **kwargs)
-            if self.mixed:
-                report["teacher_precast"] = comparison.precast(self)
-
-        DistillationTeachers.__init__ = initialize
+    study = Path(__file__).resolve().parent
+    candidate = config["variant"] == "precast_linear_conv"
+    source = (
+        study
+        / "source-snapshot"
+        / ("modeling_lingbot_vla_v2_candidate.py" if candidate else "modeling_lingbot_vla_v2.py")
+    )
+    expected = (
+        "fb60f2d5d559b0d28a3fcbc07242cce468a40a961cc69bc83d3c0123b4d36820"
+        if candidate
+        else "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d"
+    )
+    if file_sha256(source) != expected:
+        raise ValueError("Teacher class snapshot differs from the approved exact source")
+    tree = ast.parse(source.read_text())
+    nodes = [
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "DistillationTeachers"
+    ]
+    if len(nodes) != 1:
+        raise ValueError("Teacher class snapshot has an unexpected class definition")
+    namespace = dict(modeling.__dict__)
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(source), "exec"), namespace)
+    teacher_class = namespace["DistillationTeachers"]
+    original = teacher_class.targets
+    report["teacher_class_source"] = {"sha256": expected, "path": str(source), "variant": config["variant"]}
 
     @wraps(original)
     @torch.no_grad()
     def targets(self, current, future, fps=None):
+        flags = {
+            "cudnn_benchmark": torch.backends.cudnn.benchmark,
+            "cudnn_deterministic": torch.backends.cudnn.deterministic,
+            "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+            "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+        }
+        report.setdefault("backend_flags", flags)
         result = original(self, current, future, fps)
         if config["phase"] == "diagnostic":
-            report["teacher_targets"].append(
-                {"fps": fps, "targets": {name: tensor_record(value) for name, value in result.items()}}
-            )
+            row = {
+                "fps": fps,
+                "targets": {name: tensor_record(value) for name, value in result.items()},
+                "backend_flags": flags,
+            }
+            if config.get("save_teacher_tensors", False):
+                index = len(report["teacher_targets"])
+                target_path = out / f"teacher-targets-{index:03d}.pt"
+                torch.save(
+                    {key: value.detach().cpu().contiguous() for key, value in result.items()}, target_path
+                )
+                row["raw_targets"] = str(target_path)
+                input_path = out / f"teacher-inputs-{index:03d}.pt"
+                torch.save(
+                    {
+                        "current": current.detach().cpu().contiguous(),
+                        "future": future.detach().cpu().contiguous(),
+                        "fps": fps,
+                    },
+                    input_path,
+                )
+                row["raw_inputs"] = str(input_path)
+            report["teacher_targets"].append(row)
         return result
 
-    DistillationTeachers.targets = targets
+    teacher_class.targets = targets
+    modeling.DistillationTeachers = teacher_class
 
 
 def install_update_capture(config, report, out):
@@ -250,11 +283,13 @@ def install_update_capture(config, report, out):
                 "teacher_fps": base._teacher_fps,
             }
         diagnostic = config["phase"] == "diagnostic"
+        capture_student = diagnostic and config.get("capture_student_hashes", True)
         step_capture = {}
         if diagnostic:
             step_capture["input"] = {
                 key: tensor_record(value) for key, value in batch.items() if isinstance(value, torch.Tensor)
             }
+        if capture_student:
             native_step = optimizer.step
             named = dict(base.named_parameters())
             by_id = {id(value): name for name, value in named.items()}
@@ -286,18 +321,21 @@ def install_update_capture(config, report, out):
                 return result
 
             optimizer.step = capturing_step
+        if config.get("cudnn_benchmark_override") is not None:
+            torch.backends.cudnn.benchmark = config["cudnn_benchmark_override"]
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats()
         start = time.perf_counter()
         try:
             tracker, logs = original(*args, **kwargs)
         finally:
-            if diagnostic:
+            if capture_student:
                 optimizer.step = native_step
         torch.cuda.synchronize()
         row = {
             "step": len(report["steps"]) + 1,
             "loss": tracker.metrics["loss"].val,
+            "gradient_norm": tracker.metrics["grad_norm"].val,
             "update_policy_wall_ms": (time.perf_counter() - start) * 1000,
             "peak_allocated_bytes": torch.cuda.max_memory_allocated(),
             "peak_reserved_bytes": torch.cuda.max_memory_reserved(),
@@ -369,7 +407,7 @@ def main():
             "Diagnostic wall time is not a performance result."
         ),
     }
-    install_teacher_variant(config, report)
+    install_teacher_variant(config, report, out)
     install_update_capture(config, report, out)
     import lerobot.scripts.lerobot_train as train_module
 
