@@ -74,6 +74,6 @@ print(json.dumps({"runtime_versions": versions, "python": sys.version, "cuda": t
 PY
 
 "$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/prepare.py" --work-root "$LINGBOT_WORK_DIR"
-"$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/profile_teachers.py" \
+"$LINGBOT_PYTHON" "$LINGBOT_STUDY_DIR/compare_teachers.py" \
     --repo "$LINGBOT_REPO_DIR" --config "$LINGBOT_WORK_DIR/profile-config.json" \
     --out "$LINGBOT_WORK_DIR/results"
