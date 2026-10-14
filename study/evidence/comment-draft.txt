@@ -2,18 +2,36 @@
 
 I profiled the teacher call at `f58f7fb9` with real checkpoints and decoded OMX frames.
 
-You can reduce teacher memory with one conversion in `DistillationTeachers.__init__`.
+The depth teachers are reference models. They produce target features that the trainable policy learns to match.
+Their weights stay fixed during training.
+
+You can reduce teacher memory with a one-time conversion in `DistillationTeachers.__init__`.
 Store depth `Linear` and `Conv2d` weights and biases at the precision their CUDA operations already use.
-MoGe uses 16-bit floating point (`FP16`). MoRGBD uses `bfloat16` (`BF16`).
+The original checkpoint stores these parameters in 32-bit floating point (`FP32`).
+MoGe's CUDA operations use 16-bit floating point (`FP16`). MoRGBD uses `bfloat16` (`BF16`).
 Load each model on the CPU, convert these parameters, then transfer the model to CUDA.
 Normalization, positions, geometry and the video teacher retain their original precision.
 
-For the selected parameters, the change removes per-call casts:
+The diagram shows the selected weights and one teacher call:
 
 ```text
-Original: FP32 CPU -> FP32 GPU -> cast for each call -> FP16/BF16
-Proposed: FP32 CPU -> cast once -> FP16/BF16 GPU
+Original
+  Setup:       FP32 checkpoint -> FP32 weights on GPU
+                                      |
+  Each call:                  convert to FP16/BF16
+                                      |
+                image ------> teacher operation ------> target
+
+Proposed
+  Setup:       FP32 checkpoint -> convert once on CPU
+                                      |
+                              FP16/BF16 weights on GPU
+                                      |
+  Each call:    image ------> teacher operation ------> target
 ```
+
+The operation uses the same precision in both paths.
+The change reduces stored weight memory and removes repeated conversions for the selected parameters.
 
 The actual source patch gives these NVIDIA L4 results:
 
