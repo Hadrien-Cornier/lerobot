@@ -26,6 +26,7 @@ from PIL import Image
 pytest.importorskip("datasets", reason="datasets is required (install lerobot[dataset])")
 
 from lerobot.configs import VideoEncoderConfig
+from lerobot.configs.video import RGBEncoderConfig
 from lerobot.datasets.dataset_writer import _encode_video_worker
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from lerobot.datasets.utils import DEFAULT_IMAGE_PATH
@@ -304,3 +305,62 @@ def test_finalize_then_read_roundtrip(tmp_path):
     for i in range(5):
         item = dataset[i]
         assert torch.allclose(item["state"], known_states[i], atol=1e-5)
+
+
+@pytest.mark.parametrize("video", [False, True], ids=["image", "video"])
+def test_resume_finalize_then_read_updates_episode_metadata(tmp_path, monkeypatch, video):
+    """The returned instance reads each appended episode after consecutive resumes."""
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    image_key = "observation.images.front"
+    features = {
+        "action": {"dtype": "float32", "shape": (2,), "names": ["position", "velocity"]},
+        image_key: {
+            "dtype": "video" if video else "image",
+            "shape": (32, 32, 3),
+            "names": ["height", "width", "channels"],
+        },
+    }
+    root = tmp_path / "resume_readback"
+    encoder = RGBEncoderConfig(vcodec="h264", preset="ultrafast", crf=18)
+    dataset = LeRobotDataset.create(
+        repo_id=DUMMY_REPO_ID,
+        fps=10,
+        features=features,
+        root=root,
+        use_videos=video,
+        rgb_encoder=encoder,
+        video_backend="pyav",
+    )
+    for session in range(3):
+        if session:
+            dataset = LeRobotDataset.resume(
+                repo_id=DUMMY_REPO_ID, root=root, rgb_encoder=encoder, video_backend="pyav"
+            )
+        for _ in range(3):
+            dataset.add_frame(
+                {
+                    "task": "Resume readback",
+                    "action": np.array([session, session + 0.25], dtype=np.float32),
+                    image_key: np.full((32, 32, 3), 40 + session * 60, dtype=np.uint8),
+                }
+            )
+        dataset.save_episode()
+        dataset.finalize()
+        assert dataset.num_episodes == session + 1
+        assert dataset.num_frames == (session + 1) * 3
+        for index in range(dataset.num_frames):
+            item = dataset[index]
+            episode = index // 3
+            assert int(item["episode_index"]) == episode
+            torch.testing.assert_close(item["action"], torch.tensor([float(episode), episode + 0.25]))
+            image = item[image_key]
+            assert tuple(image.shape) == (3, 32, 32)
+            torch.testing.assert_close(
+                image.mean(dim=(1, 2)), torch.full((3,), (40 + episode * 60) / 255), atol=7 / 255, rtol=0
+            )
+        assert len(dataset.meta.episodes) == dataset.num_episodes
+        # A second read reuses the current metadata table.
+        metadata_view = dataset.meta.episodes
+        dataset.meta.ensure_readable()
+        dataset[dataset.num_frames - 1]
+        assert dataset.meta.episodes is metadata_view
