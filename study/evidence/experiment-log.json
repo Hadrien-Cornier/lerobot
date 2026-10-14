@@ -37,12 +37,13 @@
     "flavor": "a100-large",
     "timeout_minutes": 30,
     "price_per_minute": 0.0417,
-    "reserved_usd": 1.251,
+    "reserved_usd": 0,
     "status": "canceled_before_start",
     "run_id": "f078266b-2cdd-4e22-9417-7f4611b73ff0",
     "job_id": "6ace9ed0c66288145223192c",
     "provider_running_seconds": 0,
-    "estimated_usd_per_minute_rounded": 0
+    "estimated_usd_per_minute_rounded": 0,
+    "original_reserved_usd": 1.251
   },
   {
     "sequence": 4,
@@ -91,12 +92,50 @@
   },
   {
     "sequence": 7,
-    "experiment": "1c29854c-9c43-461a-b910-3635e3be2619",
     "parent": "294e2e53-e1ea-4e14-b5fb-67f612bf1682",
-    "status": "preparation",
-    "question": "Does default convolution selection cause the native depth discrepancy?",
-    "change": "Fresh baseline repeat plus benchmark=False-only baseline and actual source candidate",
-    "prediction": "Baseline repeats may differ under default settings; fixed settings should preserve target values",
-    "unverified": true
+    "experiment": "1c29854c-9c43-461a-b910-3635e3be2619",
+    "source_commit": "ab9da5a2216f75535d6455d167626618f3171adf",
+    "flavor": "h200",
+    "timeout_minutes": 30,
+    "price_per_minute": 0.0833,
+    "reserved_usd": 2.5,
+    "status": "completed",
+    "run_id": "4b1a76c4-d6bb-4d0d-b5cc-7e25b384fd20",
+    "job_id": "6aceab11c662881452231eb3",
+    "provider_running_seconds": 1299.033,
+    "estimated_usd_per_minute_rounded": 1.8326
+  },
+  {
+    "sequence": 8,
+    "parent": "91c3608c-5a4c-48b9-99dd-2bd20f737122",
+    "experiment": "f624795f-1c2b-40c2-8548-028ad2213f85",
+    "source_commit": "1da2475673c3dde90b51ce9b57668b724cc8a2a1",
+    "modeling_sha256": "78242de59473ccbc46c3a310172beff3018fff46561c4370bc15db8cd5fd8096",
+    "flavor": "l4x1",
+    "timeout_minutes": 30,
+    "hourly_price": 0.8,
+    "reserved_usd": 0.4,
+    "status": "completed",
+    "run_id": "ff723218-d1f8-44b3-a1da-339147e2cf32",
+    "job_id": "6aceae7fc662881452232007",
+    "provider_running_seconds": 134.398,
+    "estimated_usd_per_minute_rounded": 0.04
+  },
+  {
+    "sequence": 9,
+    "parent": "1c29854c-9c43-461a-b910-3635e3be2619",
+    "experiment": "baac43f6-fce8-4d9c-85be-9861e155b75f",
+    "source_commit": "fd683bb968ddd8ba68ee0182e9ebb0d17bb10ac4",
+    "candidate_source_commit": "1da2475673c3dde90b51ce9b57668b724cc8a2a1",
+    "modeling_sha256": "78242de59473ccbc46c3a310172beff3018fff46561c4370bc15db8cd5fd8096",
+    "flavor": "h200",
+    "timeout_minutes": 30,
+    "price_per_minute": 0.0833,
+    "reserved_usd": 2.5,
+    "status": "completed",
+    "run_id": "85991c7d-2eef-4dbf-b4dd-15a7577a22f7",
+    "job_id": "6aced5925ccb47ba0f78f42c",
+    "provider_running_seconds": 713.805,
+    "estimated_usd_per_minute_rounded": 0.9996
   }
 ]

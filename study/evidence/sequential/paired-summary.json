@@ -1,0 +1,28 @@
+{
+  "1": {
+    "paired_calls": 24,
+    "all_candidate_calls_faster": false,
+    "mean_saved_ms": 9.195068208337412,
+    "bootstrap95_mean_saved_ms": [
+      7.916910791667675,
+      10.232489958337254
+    ],
+    "medians": {
+      "baseline": 84.8518120000108,
+      "precast_linear_conv": 74.84249050000358
+    }
+  },
+  "4": {
+    "paired_calls": 24,
+    "all_candidate_calls_faster": true,
+    "mean_saved_ms": 8.13290654166702,
+    "bootstrap95_mean_saved_ms": [
+      7.520557416669978,
+      8.749259041659721
+    ],
+    "medians": {
+      "baseline": 242.36197299998707,
+      "precast_linear_conv": 233.8952430000063
+    }
+  }
+}

@@ -64,3 +64,30 @@ Each GPU run uses a committed orx experiment and a pinned CUDA container.
 The result configuration records exact assets, environment, inputs and timings.
 The local workspace budget ledger contains provider duration and estimated GPU cost.
 AI assistance: Codex prepares the patch, harness and evidence.
+
+Final source helper
+Source commit 1da2475673c3dde90b51ce9b57668b724cc8a2a1 gives each depth teacher
+one load, selective conversion and CUDA transfer before the next teacher loads.
+The final actual-source L4 study repeats all parameter, buffer, stride and target checks.
+All 1,233 parameters, 6 buffers and 25 candidate targets pass exactly.
+Complete target medians: B1 84.852 to 74.842 ms (11.8% lower); B4 242.362 to 233.895 ms (3.5% lower).
+Warmed target peaks remain 2.941 to 1.433 GiB at B1 and 3.166 to 1.644 GiB at B4.
+Constructor allocation is 2.092 to 1.347 GiB. Host peak is not measured.
+See sequential/results.json.
+
+Numerical control and timing correction
+The seven-process H200 control uses the prior 8d source constructor.
+Two unchanged default baseline runs produce different depth targets:
+max_abs 0.25, relative L2 approximately0.004. Video targets stay exact.
+With only cudnn.benchmark=False, all five target tensors and the loss match exactly.
+Student gradient, updated parameter and AdamW hashes still differ.
+All captured tensors and losses remain finite.
+The controlled native medians reverse the original time gain: 408.346 to 450.378 ms.
+There is no reliable full-update speed gain from these short runs.
+The measured warm-update memory reduction repeats: about 0.75 GiB.
+See native-controls/results.json.
+The final helper passes a separate deterministic native diagnostic.
+It uses strict deterministic operations, deterministic cuDNN and a fixed cuBLAS workspace.
+Both native diagnostic processes complete. All five target tensors, clipped gradients, updated parameters and AdamW state match exactly. Inputs, initial parameters, optimizer groups and recorded backend flags also match. All captured tensors are finite.
+See final-native/results.json. This is one update under deterministic settings. It is not a default-setting equality or speed claim.
+The review-ready comment is comment-draft.txt. No public comment or pull request exists for this improvement.

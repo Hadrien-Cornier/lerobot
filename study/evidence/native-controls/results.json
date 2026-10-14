@@ -1,0 +1,553 @@
+{
+  "config": {
+    "source_head": "f58f7fb9dbb241304df96e967aea0f5b42ff9a4d",
+    "source_sha256": {
+      "src/lerobot/scripts/lerobot_train.py": "fae4152f57400d64dc9f4ed5999242866b1e94775a6fc7b5c489118d8acba66e",
+      "src/lerobot/policies/factory.py": "16d58386674759814f3fbd3174f71a0750bcd92cfb34a9d3f29113dd69b9d4bc",
+      "src/lerobot/policies/pretrained.py": "47be2c517d53da3dcc449f3858ec9bd93e45b5c1e5a7b307a41c3cf83d8d5d0b",
+      "src/lerobot/policies/lingbot_vla_v2/modeling_lingbot_vla_v2.py": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "src/lerobot/policies/lingbot_vla_v2/processor_lingbot_vla_v2.py": "1609cf8beb5d80690562df5432a39ffc29c818a82c4e8e1ff8388f52440b37f6",
+      "src/lerobot/policies/lingbot_vla_v2/configuration_lingbot_vla_v2.py": "0b0f44f79aeb8cdfe48995c75433b5b4e3dc3e3273e04ec9cbc109ccc8523ce3",
+      "src/lerobot/datasets/factory.py": "713aed1981af352d1306c75181eef878c39eb406d2e9d3b4d462b202ce66ca4e",
+      "src/lerobot/optim/optimizers.py": "a7a5c282c88973c08d4f947b831f8dab679d2347f0fcca18283377af792fe957",
+      "src/lerobot/optim/schedulers.py": "dbbe9ca43c914954ddf00dcb4589df9be8f21b17cdeb19af6bc44509e499bf6d",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/depth_teachers.py": "3ed6f98fc0720b2c1e51cbb5f70fbe2a5ac5ecb64495c9d30ed6f0905e58b0c7",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/video_teacher.py": "9434178a501eb4b9db9e6799ee8903d475e1a9bb4aaf4ff1e052d93cb4125115",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/qwen2_action_expert.py": "f49290d690eab8f01594a10af435cb1fb5f62ac0102352eb28c3b75f3c4c7869",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/modeling_lingbot_vla_v2_base.py": "ec7176044cad46f0b52d7623fed7b512e9c8d712b55f452726e1374d875f5cac",
+      "src/lerobot/policies/lingbot_vla_v2/model_core/align_heads.py": "4617889e281e89ff28d891de3086bfb7cfb9485b05ba0fb6892c488e46733661"
+    },
+    "repo": "/workspace/repo",
+    "checkpoint": "/workspace/repo/study/runtime/full-assets/base",
+    "qwen_config": "/workspace/repo/study/runtime/full-assets/qwen",
+    "dataset_root": "/workspace/repo/study/runtime/full-assets/omx",
+    "teacher_config": "/workspace/repo/study/runtime/profile-config.json",
+    "asset_verification_manifest": "/workspace/repo/study/runtime/full-policy-assets-verified.json",
+    "out": "/workspace/repo/study/runtime/results",
+    "variant": "baseline",
+    "phase": "diagnostic",
+    "batch_size": 1,
+    "seed": 4897,
+    "native_training_steps": 30000,
+    "stop_after_steps": 1,
+    "warmup_steps": 0,
+    "dataset_revision": "f7e700308a7049fd3d33adaf84df6e2ece19676d",
+    "model_revision": "5dd4b5299ed85c782a987d58ff3f24f95a95474d",
+    "qwen_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
+    "num_workers": 0,
+    "gradient_checkpointing": false,
+    "minimum_device_memory_gib": 75,
+    "allow_candidate": true,
+    "comparison_module": "/workspace/repo/study/compare_teachers.py",
+    "comparison_module_sha256": "4dc1cadfe56bc7b2c110ad16f51c58db015ec24bc6d3e59fee82679e1f36a94b",
+    "selected_candidate": "precast_linear_conv",
+    "total_timeout_seconds": 1500
+  },
+  "runs": [
+    {
+      "control_name": "default-baseline-a",
+      "phase": "diagnostic",
+      "variant": "baseline",
+      "return_code": 0,
+      "wall_seconds": 139.8358230959857,
+      "log": "/workspace/repo/study/runtime/results/default-baseline-a.log",
+      "results": "/workspace/repo/study/runtime/results/default-baseline-a/results.json"
+    },
+    {
+      "control_name": "default-baseline-b",
+      "phase": "diagnostic",
+      "variant": "baseline",
+      "return_code": 0,
+      "wall_seconds": 134.44272539799567,
+      "log": "/workspace/repo/study/runtime/results/default-baseline-b.log",
+      "results": "/workspace/repo/study/runtime/results/default-baseline-b/results.json"
+    },
+    {
+      "control_name": "default-candidate",
+      "phase": "diagnostic",
+      "variant": "precast_linear_conv",
+      "return_code": 0,
+      "wall_seconds": 134.19697484897915,
+      "log": "/workspace/repo/study/runtime/results/default-candidate.log",
+      "results": "/workspace/repo/study/runtime/results/default-candidate/results.json"
+    },
+    {
+      "control_name": "fixed-baseline",
+      "phase": "diagnostic",
+      "variant": "baseline",
+      "return_code": 0,
+      "wall_seconds": 245.9035947599914,
+      "log": "/workspace/repo/study/runtime/results/fixed-baseline.log",
+      "results": "/workspace/repo/study/runtime/results/fixed-baseline/results.json"
+    },
+    {
+      "control_name": "fixed-candidate",
+      "phase": "diagnostic",
+      "variant": "precast_linear_conv",
+      "return_code": 0,
+      "wall_seconds": 243.7565313060768,
+      "log": "/workspace/repo/study/runtime/results/fixed-candidate.log",
+      "results": "/workspace/repo/study/runtime/results/fixed-candidate/results.json"
+    },
+    {
+      "control_name": "fixed-timing-baseline",
+      "phase": "timing",
+      "variant": "baseline",
+      "return_code": 0,
+      "wall_seconds": 133.77556723100133,
+      "log": "/workspace/repo/study/runtime/results/fixed-timing-baseline.log",
+      "results": "/workspace/repo/study/runtime/results/fixed-timing-baseline/results.json"
+    },
+    {
+      "control_name": "fixed-timing-candidate",
+      "phase": "timing",
+      "variant": "precast_linear_conv",
+      "return_code": 0,
+      "wall_seconds": 134.8158637280576,
+      "log": "/workspace/repo/study/runtime/results/fixed-timing-candidate.log",
+      "results": "/workspace/repo/study/runtime/results/fixed-timing-candidate/results.json"
+    }
+  ],
+  "scope": "One GPU job; seven fresh native processes; no asset download",
+  "environment": {
+    "torch": "2.11.0+cu128",
+    "cuda": "12.8",
+    "gpu": "NVIDIA H200",
+    "python": "3.12.13 (main, Mar 10 2026, 18:17:25) [Clang 21.1.4 ]"
+  },
+  "backend_flags": {
+    "default-baseline-a": {
+      "cudnn_benchmark": true,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    },
+    "default-baseline-b": {
+      "cudnn_benchmark": true,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    },
+    "default-candidate": {
+      "cudnn_benchmark": true,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    },
+    "fixed-baseline": {
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    },
+    "fixed-candidate": {
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    },
+    "fixed-timing-baseline": {
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    },
+    "fixed-timing-candidate": {
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": true
+    }
+  },
+  "backend_flags_match_expected": true,
+  "teacher_class_sources": {
+    "default-baseline-a": {
+      "sha256": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2.py",
+      "variant": "baseline"
+    },
+    "default-baseline-b": {
+      "sha256": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2.py",
+      "variant": "baseline"
+    },
+    "default-candidate": {
+      "sha256": "fb60f2d5d559b0d28a3fcbc07242cce468a40a961cc69bc83d3c0123b4d36820",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2_candidate.py",
+      "variant": "precast_linear_conv"
+    },
+    "fixed-baseline": {
+      "sha256": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2.py",
+      "variant": "baseline"
+    },
+    "fixed-candidate": {
+      "sha256": "fb60f2d5d559b0d28a3fcbc07242cce468a40a961cc69bc83d3c0123b4d36820",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2_candidate.py",
+      "variant": "precast_linear_conv"
+    },
+    "fixed-timing-baseline": {
+      "sha256": "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2.py",
+      "variant": "baseline"
+    },
+    "fixed-timing-candidate": {
+      "sha256": "fb60f2d5d559b0d28a3fcbc07242cce468a40a961cc69bc83d3c0123b4d36820",
+      "path": "/workspace/repo/study/source-snapshot/modeling_lingbot_vla_v2_candidate.py",
+      "variant": "precast_linear_conv"
+    }
+  },
+  "target_comparisons": {
+    "default-baseline-a_vs_default-baseline-b": {
+      "input_exact": true,
+      "fps_exact": true,
+      "targets": {
+        "depth": {
+          "exact": false,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 165687,
+          "elements": 262144,
+          "max_abs": 0.25,
+          "mean_abs": 0.013845182955265045,
+          "relative_l2": 0.004066038876771927,
+          "finite": true
+        },
+        "future_depth": {
+          "exact": false,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 165196,
+          "elements": 262144,
+          "max_abs": 0.25,
+          "mean_abs": 0.014012583531439304,
+          "relative_l2": 0.003926902078092098,
+          "finite": true
+        },
+        "future_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "current_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "future_video_cls": {
+          "exact": true,
+          "shape": [
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 1024,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        }
+      },
+      "loss_left": 0.4285438358783722,
+      "loss_right": 0.428544819355011
+    },
+    "default-baseline-a_vs_default-candidate": {
+      "input_exact": true,
+      "fps_exact": true,
+      "targets": {
+        "depth": {
+          "exact": false,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 171897,
+          "elements": 262144,
+          "max_abs": 0.25,
+          "mean_abs": 0.015401230193674564,
+          "relative_l2": 0.004394118674099445,
+          "finite": true
+        },
+        "future_depth": {
+          "exact": false,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 168593,
+          "elements": 262144,
+          "max_abs": 0.25,
+          "mean_abs": 0.014850674197077751,
+          "relative_l2": 0.0041121202521026134,
+          "finite": true
+        },
+        "future_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "current_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "future_video_cls": {
+          "exact": true,
+          "shape": [
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 1024,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        }
+      },
+      "loss_left": 0.4285438358783722,
+      "loss_right": 0.42854630947113037
+    },
+    "default-baseline-b_vs_default-candidate": {
+      "input_exact": true,
+      "fps_exact": true,
+      "targets": {
+        "depth": {
+          "exact": false,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 171128,
+          "elements": 262144,
+          "max_abs": 0.25,
+          "mean_abs": 0.015031487680971622,
+          "relative_l2": 0.004293298814445734,
+          "finite": true
+        },
+        "future_depth": {
+          "exact": false,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 167296,
+          "elements": 262144,
+          "max_abs": 0.25,
+          "mean_abs": 0.014548210427165031,
+          "relative_l2": 0.0040548318065702915,
+          "finite": true
+        },
+        "future_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "current_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "future_video_cls": {
+          "exact": true,
+          "shape": [
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 1024,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        }
+      },
+      "loss_left": 0.428544819355011,
+      "loss_right": 0.42854630947113037
+    },
+    "fixed-baseline_vs_fixed-candidate": {
+      "input_exact": true,
+      "fps_exact": true,
+      "targets": {
+        "depth": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "future_depth": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "future_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "current_video": {
+          "exact": true,
+          "shape": [
+            1,
+            256,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 262144,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        },
+        "future_video_cls": {
+          "exact": true,
+          "shape": [
+            1,
+            1024
+          ],
+          "dtype": "torch.bfloat16",
+          "changed_elements": 0,
+          "elements": 1024,
+          "max_abs": 0.0,
+          "mean_abs": 0.0,
+          "relative_l2": 0.0,
+          "finite": true
+        }
+      },
+      "loss_left": 0.4285482168197632,
+      "loss_right": 0.4285482168197632
+    }
+  },
+  "inputs_match_expected": true,
+  "fixed_student_diagnostic_exact": {
+    "input": true,
+    "initial_parameters": true,
+    "clipped_gradients": false,
+    "updated_parameters": false,
+    "adamw_state": false,
+    "optimizer_groups": true
+  },
+  "all_finite": true,
+  "fixed_timing": {
+    "fixed-timing-baseline": {
+      "measured_steps": 9,
+      "median_update_ms": 408.3455790532753,
+      "peak_allocated_bytes": 64055233536
+    },
+    "fixed-timing-candidate": {
+      "measured_steps": 9,
+      "median_update_ms": 450.3780970117077,
+      "peak_allocated_bytes": 63250202624
+    }
+  },
+  "interpretation_limit": "One repeated default batch and one benchmark=False pair. Benchmark dependence is a hypothesis until the numerical controls resolve it."
+}
