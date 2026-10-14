@@ -35,10 +35,14 @@
   "qwen_revision": "ebb281ec70b05090aa6165b016eac8ec08e71b17",
   "num_workers": 4,
   "gradient_checkpointing": false,
+  "deterministic_algorithms": true,
+  "cudnn_deterministic": true,
+  "cublas_workspace_config": ":4096:8",
   "minimum_device_memory_gib": 75,
   "allow_candidate": false,
   "comparison_module": "/workspace/lerobot/study/compare_teachers.py",
   "comparison_module_sha256": "4dc1cadfe56bc7b2c110ad16f51c58db015ec24bc6d3e59fee82679e1f36a94b",
   "selected_candidate": "precast_linear_conv",
+  "phase_names": ["fixed-baseline", "fixed-candidate"],
   "total_timeout_seconds": 1500
 }

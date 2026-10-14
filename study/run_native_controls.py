@@ -1,4 +1,4 @@
-"""Run seven fresh native numerical control processes inside one managed GPU job."""
+"""Run fresh native numerical control processes inside one managed GPU job."""
 
 from __future__ import annotations
 
@@ -41,6 +41,21 @@ def phase_configs(base):
         ("fixed-timing-baseline", "baseline", False, False),
         ("fixed-timing-candidate", "precast_linear_conv", False, False),
     ]
+    phase_names = base.get("phase_names")
+    if phase_names is not None:
+        known_names = {name for name, *_ in phases}
+        if not isinstance(phase_names, list) or any(not isinstance(name, str) for name in phase_names):
+            raise ValueError("phase_names must be a list of phase names")
+        if len(phase_names) != len(set(phase_names)):
+            raise ValueError("phase_names cannot contain duplicates")
+        unknown_names = set(phase_names) - known_names
+        if unknown_names:
+            raise ValueError(f"Unknown phase names: {sorted(unknown_names)}")
+        required_names = {"fixed-baseline", "fixed-candidate"}
+        if not required_names.issubset(phase_names):
+            raise ValueError("phase_names must include fixed-baseline and fixed-candidate")
+        requested_names = set(phase_names)
+        phases = [phase for phase in phases if phase[0] in requested_names]
     rows = []
     for name, variant, benchmark_override, student_hashes in phases:
         timing = name.startswith("fixed-timing")
@@ -54,7 +69,7 @@ def phase_configs(base):
             warmup_steps=3 if timing else 0,
             save_teacher_tensors=True,
             capture_student_hashes=student_hashes,
-            cudnn_deterministic=False,
+            cudnn_deterministic=base.get("cudnn_deterministic", False),
             cudnn_benchmark_override=benchmark_override,
         )
         rows.append(child)
@@ -111,7 +126,7 @@ def main():
     report = {
         "config": base,
         "runs": [],
-        "scope": "One GPU job; seven fresh native processes; no asset download",
+        "scope": f"One GPU job; {len(phases)} fresh native processes; no asset download",
         "environment": {
             "torch": torch.__version__,
             "cuda": torch.version.cuda,
@@ -166,14 +181,19 @@ def main():
             print("FULL_NATIVE_FAILURE_LOG_END", flush=True)
             status = return_code
             break
-    if status == 0 and len(report["runs"]) == 7:
+    if status == 0 and len(report["runs"]) == len(phases):
         data = {row["control_name"]: json.loads((Path(row["results"])).read_text()) for row in report["runs"]}
         report["backend_flags"] = {name: value["backend_flags"] for name, value in data.items()}
-        reference_flags = report["backend_flags"]["default-baseline-a"]
+        reference_flags = next(iter(report["backend_flags"].values()))
         other_keys = set(reference_flags) - {"cudnn_benchmark"}
+        expected_cudnn_deterministic = base.get("cudnn_deterministic", False)
+        expected_deterministic_algorithms = base.get("deterministic_algorithms", False)
+        expected_cublas_workspace_config = base.get("cublas_workspace_config")
         report["backend_flags_match_expected"] = all(
             flags["cudnn_benchmark"] is (not name.startswith("fixed"))
-            and flags["cudnn_deterministic"] is False
+            and flags["cudnn_deterministic"] is expected_cudnn_deterministic
+            and flags["deterministic_algorithms"] is expected_deterministic_algorithms
+            and flags["cublas_workspace_config"] == expected_cublas_workspace_config
             and all(flags[key] == reference_flags[key] for key in other_keys)
             for name, flags in report["backend_flags"].items()
         )
@@ -189,6 +209,7 @@ def main():
             ("default-baseline-b", "default-candidate"),
             ("fixed-baseline", "fixed-candidate"),
         ]
+        pairs = [(left, right) for left, right in pairs if left in data and right in data]
         for left_name, right_name in pairs:
             left, right = data[left_name], data[right_name]
             left_capture = json.loads((root / left_name / "diagnostic-tensors.json").read_text())
@@ -205,28 +226,53 @@ def main():
             }
         left = json.loads((root / "fixed-baseline" / "diagnostic-tensors.json").read_text())
         right = json.loads((root / "fixed-candidate" / "diagnostic-tensors.json").read_text())
+        required_student_fields = {
+            "initial_parameters",
+            "clipped_gradients",
+            "updated_parameters",
+            "adamw_state",
+            "optimizer_groups",
+        }
+        student_fields_present = required_student_fields.issubset(left) and required_student_fields.issubset(
+            right
+        )
+        diagnostic_keys = set(left) | set(right)
+        report["fixed_student_diagnostic_complete"] = student_fields_present and set(left) == set(right)
+        if not report["fixed_student_diagnostic_complete"]:
+            status = 5
         report["inputs_match_expected"] = all(
             row["input_exact"] and row["fps_exact"] for row in report["target_comparisons"].values()
         )
         if not report["inputs_match_expected"]:
             status = 4
-        report["fixed_student_diagnostic_exact"] = {key: left[key] == right[key] for key in left}
         report["all_finite"] = all(
             all_finite(value)
             for value in (left, right, report["target_comparisons"], [x["steps"] for x in data.values()])
         )
+        report["fixed_student_diagnostic_exact"] = {
+            key: key in left and key in right and left[key] == right[key] for key in diagnostic_keys
+        }
         report["fixed_timing"] = {}
-        for name in ("fixed-timing-baseline", "fixed-timing-candidate"):
-            rows = [row for row in data[name]["steps"] if not row["warmup"]]
-            report["fixed_timing"][name] = {
-                "measured_steps": len(rows),
-                "median_update_ms": statistics.median(row["update_policy_wall_ms"] for row in rows),
-                "peak_allocated_bytes": max(row["peak_allocated_bytes"] for row in rows),
-            }
-        report["interpretation_limit"] = (
-            "One repeated default batch and one benchmark=False pair. "
-            "Benchmark dependence is a hypothesis until the numerical controls resolve it."
-        )
+        timing_names = {"fixed-timing-baseline", "fixed-timing-candidate"}
+        if timing_names.issubset(data):
+            for name in sorted(timing_names):
+                rows = [row for row in data[name]["steps"] if not row["warmup"]]
+                report["fixed_timing"][name] = {
+                    "measured_steps": len(rows),
+                    "median_update_ms": statistics.median(row["update_policy_wall_ms"] for row in rows),
+                    "peak_allocated_bytes": max(row["peak_allocated_bytes"] for row in rows),
+                }
+        default_controls = {"default-baseline-a", "default-baseline-b", "default-candidate"}
+        if default_controls.issubset(data):
+            report["interpretation_limit"] = (
+                "The report includes repeated default-backend controls and a benchmark=False pair. "
+                "Benchmark dependence remains a hypothesis until the controls resolve it."
+            )
+        else:
+            report["interpretation_limit"] = (
+                "The report includes only a fixed benchmark=False pair. "
+                "It does not test baseline repeatability or default benchmark behavior."
+            )
         if not report["all_finite"]:
             status = 2
     (root / "results.json").write_text(json.dumps(report, indent=2) + "\n")

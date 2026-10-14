@@ -199,7 +199,7 @@ def install_teacher_variant(config, report, out):
         / ("modeling_lingbot_vla_v2_candidate.py" if candidate else "modeling_lingbot_vla_v2.py")
     )
     expected = (
-        "fb60f2d5d559b0d28a3fcbc07242cce468a40a961cc69bc83d3c0123b4d36820"
+        "78242de59473ccbc46c3a310172beff3018fff46561c4370bc15db8cd5fd8096"
         if candidate
         else "046247ec8fd40f100762972f29d75e9370b2d93455ea595f14cfd4d31fbe082d"
     )
@@ -223,6 +223,8 @@ def install_teacher_variant(config, report, out):
         flags = {
             "cudnn_benchmark": torch.backends.cudnn.benchmark,
             "cudnn_deterministic": torch.backends.cudnn.deterministic,
+            "deterministic_algorithms": torch.are_deterministic_algorithms_enabled(),
+            "cublas_workspace_config": os.environ.get("CUBLAS_WORKSPACE_CONFIG"),
             "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
             "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
         }
@@ -382,9 +384,12 @@ def main():
     verify_local_assets(config)
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["HF_DATASETS_OFFLINE"] = "1"
+    if config.get("cublas_workspace_config") is not None:
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = config["cublas_workspace_config"]
     sys.path[:0] = [str(Path(config["repo"]) / "src"), config["repo"]]
     import torch
 
+    torch.use_deterministic_algorithms(config.get("deterministic_algorithms", False), warn_only=False)
     if (
         not torch.cuda.is_available()
         or torch.cuda.get_device_properties(0).total_memory < config["minimum_device_memory_gib"] * 1024**3
