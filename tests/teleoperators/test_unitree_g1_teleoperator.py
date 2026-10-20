@@ -26,7 +26,7 @@ from lerobot.utils.import_utils import _unitree_sdk_available
 if not _unitree_sdk_available:
     pytest.skip("Unitree SDK not available", allow_module_level=True)
 
-from lerobot.robots.unitree_g1.g1_utils import REMOTE_AXES
+from lerobot.robots.unitree_g1.g1_utils import REMOTE_BUTTONS, REMOTE_KEYS
 from lerobot.teleoperators.unitree_g1.config_unitree_g1 import (
     ExoskeletonArmPortConfig,
     UnitreeG1TeleoperatorConfig,
@@ -55,7 +55,7 @@ def test_joystick_state_defaults():
     remote = JoystickState()
     assert not remote.is_active
     assert len(remote.buttons) == 16
-    assert remote.to_action() == dict.fromkeys(REMOTE_AXES, 0.0)
+    assert remote.to_action() == dict.fromkeys(REMOTE_KEYS, 0.0)
 
 
 def test_joystick_state_to_action():
@@ -65,6 +65,7 @@ def test_joystick_state_to_action():
         "remote.ly": -0.3,
         "remote.rx": 0.1,
         "remote.ry": 0.0,
+        **dict.fromkeys(REMOTE_BUTTONS, 0.0),
     }
 
 
@@ -148,6 +149,9 @@ def test_parse_raw_bytes():
         "remote.ly": -0.5,
         "remote.rx": 0.75,
         "remote.ry": -1.0,
+        **dict.fromkeys(REMOTE_BUTTONS, 0.0),
+        "remote.button.0": 1.0,
+        "remote.button.8": 1.0,
     }
     assert parsed.buttons[0] == 1  # RB
     assert parsed.buttons[8] == 1  # A
@@ -198,8 +202,7 @@ def test_remote_only_connect(teleop_remote_only):
 def test_remote_only_action_features(teleop_remote_only):
     teleop = teleop_remote_only
     features = teleop.action_features
-    # Remote-only: just the 4 remote axes
-    assert set(features.keys()) == set(REMOTE_AXES)
+    assert features == dict.fromkeys(REMOTE_KEYS, float)
 
 
 def test_feedback_features(teleop_remote_only):
@@ -213,7 +216,7 @@ def test_remote_only_get_action(teleop_remote_only):
     teleop = teleop_remote_only
     teleop.connect()
     action = teleop.get_action()
-    assert set(action.keys()) == set(REMOTE_AXES)
+    assert set(action.keys()) == set(REMOTE_KEYS)
     assert all(isinstance(v, float) for v in action.values())
 
 
@@ -221,7 +224,22 @@ def test_remote_only_action_follows_wireless(teleop_remote_only):
     teleop = teleop_remote_only
     teleop.connect()
     teleop.send_feedback({"wireless_remote": _wireless_bytes(lx=0.5, ly=-0.25)})
-    assert teleop.get_action() == {"remote.lx": 0.5, "remote.ly": -0.25, "remote.rx": 0.0, "remote.ry": 0.0}
+    assert teleop.get_action() == {
+        **dict.fromkeys(REMOTE_KEYS, 0.0),
+        "remote.lx": 0.5,
+        "remote.ly": -0.25,
+    }
+
+
+@pytest.mark.parametrize("button", [0, 4])
+def test_wireless_button_press_and_release(teleop_remote_only, button):
+    teleop = teleop_remote_only
+    key = f"remote.button.{button}"
+    teleop.send_feedback({"wireless_remote": _wireless_bytes(buttons=1 << button)})
+    assert teleop.get_action()[key] == 1.0
+
+    teleop.send_feedback({"wireless_remote": _wireless_bytes()})
+    assert teleop.get_action()[key] == 0.0
 
 
 def test_send_feedback_ignores_short_payload(teleop_remote_only):
@@ -282,6 +300,22 @@ def test_exo_joystick_drives_when_wireless_idle(teleop_with_exo):
     assert action["left_shoulder.q"] == 0.1
     assert action["remote.lx"] == pytest.approx(0.4)
     assert action["remote.ly"] == pytest.approx(-0.2)
+
+
+@pytest.mark.parametrize("side, button", [("right", 0), ("left", 4)])
+def test_exo_button_press_and_release(teleop_with_exo, side, button):
+    teleop = teleop_with_exo
+    arm = getattr(teleop, f"{side}_arm")
+    key = f"remote.button.{button}"
+    arm.joystick_from_raw.return_value = ExoJoystickState(x=0.0, y=0.0, pressed=True)
+    action = teleop.get_action()
+    assert action[key] == 1.0
+    assert isinstance(action[key], float)
+    assert all(action[k] == 0.0 for k in REMOTE_BUTTONS if k != key)
+    assert teleop.action_features[key] is float
+
+    arm.joystick_from_raw.return_value = ExoJoystickState(x=0.0, y=0.0, pressed=False)
+    assert teleop.get_action()[key] == 0.0
 
 
 def test_wireless_overrides_exo_joystick(teleop_with_exo):

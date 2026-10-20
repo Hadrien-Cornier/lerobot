@@ -35,7 +35,7 @@ from .config_unitree_g1 import UnitreeG1Config
 from .g1_kinematics import G1_29_ArmIK
 from .g1_utils import (
     NUM_MOTORS,
-    REMOTE_AXES,
+    REMOTE_KEYS,
     G1_29_JointArmIndex,
     G1_29_JointIndex,
     default_remote_input,
@@ -305,11 +305,11 @@ class UnitreeG1(Robot):
         if controller_ft is not None:
             return dict(controller_ft)
 
-        # Locomotion controllers (GR00T / Holosoma): arm joint targets + joystick axes.
+        # Locomotion controllers (GR00T / Holosoma): arm joint targets + joystick axes and buttons.
         # TODO: have GR00T/Holosoma advertise their own action_features too, so every
         # controller declares its action space and this fallthrough can be dropped.
         arm_features = {f"{G1_29_JointArmIndex(motor).name}.q": float for motor in G1_29_JointArmIndex}
-        remote_features = dict.fromkeys(REMOTE_AXES, float)
+        remote_features = dict.fromkeys(REMOTE_KEYS, float)
         return {**arm_features, **remote_features}
 
     def _controller_loop(self):
