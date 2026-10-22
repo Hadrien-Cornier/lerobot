@@ -14,7 +14,8 @@
 
 """CPU smoke test for the QF3 actor objective.
 
-This is not a registered LeRobot algorithm and not a benchmark.
+The loss functions are the registered QF3 implementation.
+This script is not a benchmark.
 It checks the clipped one-step actor loss from Kim et al., arXiv:2610.08789v1
 (section "QF3 Actor Objective"), on a fixed synthetic replay buffer.
 
@@ -37,6 +38,10 @@ from dataclasses import asdict, dataclass
 
 import torch
 from torch import Tensor, nn
+
+from lerobot.policies.flow_actor.modeling_flow_actor import FlowVelocityMLP as FlowActor
+from lerobot.rl.algorithms.qf3.losses import ActorTerms, critic_td_loss, flow_path, qf3_actor_terms
+from lerobot.rl.algorithms.qf3.networks import TwinQ
 
 # Paper Table tab:qf3-arch uses width 256. This smoke uses a smaller width.
 SMOKE_HIDDEN = 32
@@ -76,89 +81,6 @@ class SmokeConfig:
     euler_steps: int = PAPER_EULER_STEPS
 
 
-@dataclass
-class ActorTerms:
-    """Tensors from one actor-objective evaluation."""
-
-    loss: Tensor
-    cfm: Tensor
-    q_mean: Tensor
-    mask_fraction: Tensor
-    identity_error: Tensor
-    endpoint_gap: Tensor
-    bound_violation: Tensor
-
-
-class SinusoidalTimeEncoding(nn.Module):
-    """Fixed sinusoidal embedding phi(tau) from the QF3 appendix."""
-
-    def __init__(self, dim: int) -> None:
-        super().__init__()
-        if dim < 2 or dim % 2 != 0:
-            raise ValueError(f"time embedding dim must be even and at least 2, got {dim}")
-        half = dim // 2
-        index = torch.arange(half, dtype=torch.float32)
-        omega = torch.exp(-index * math.log(10000.0) / float(half - 1))
-        self.register_buffer("omega", omega)
-
-    def forward(self, flow_time: Tensor) -> Tensor:
-        # flow_time is (B, 1). phi is [sin(tau * omega), cos(tau * omega)].
-        angles = flow_time * self.omega.view(1, -1)
-        return torch.cat((angles.sin(), angles.cos()), dim=-1)
-
-
-class FlowActor(nn.Module):
-    """MLP velocity field v(s, x_tau, tau). Last layer starts at zero, as in the appendix."""
-
-    def __init__(self, state_dim: int, action_dim: int, hidden: int, time_dim: int) -> None:
-        super().__init__()
-        self.time_enc = SinusoidalTimeEncoding(time_dim)
-        in_dim = state_dim + action_dim + time_dim
-        self.net = nn.Sequential(
-            nn.Linear(in_dim, hidden),
-            nn.SiLU(),
-            nn.Linear(hidden, hidden),
-            nn.SiLU(),
-            nn.Linear(hidden, action_dim),
-        )
-        nn.init.zeros_(self.net[-1].weight)
-        nn.init.zeros_(self.net[-1].bias)
-
-    def forward(self, state: Tensor, action_sample: Tensor, flow_time: Tensor) -> Tensor:
-        encoded_time = self.time_enc(flow_time)
-        return self.net(torch.cat((state, action_sample, encoded_time), dim=-1))
-
-
-class QNetwork(nn.Module):
-    """Scalar Q(s, a). Two of these form the twin critic."""
-
-    def __init__(self, state_dim: int, action_dim: int, hidden: int) -> None:
-        super().__init__()
-        in_dim = state_dim + action_dim
-        self.net = nn.Sequential(
-            nn.Linear(in_dim, hidden),
-            nn.SiLU(),
-            nn.Linear(hidden, hidden),
-            nn.SiLU(),
-            nn.Linear(hidden, 1),
-        )
-
-    def forward(self, state: Tensor, action: Tensor) -> Tensor:
-        return self.net(torch.cat((state, action), dim=-1))
-
-
-class TwinQ(nn.Module):
-    """TD3 twin Q. The actor uses q1 only, matching CleanRL TD3."""
-
-    def __init__(self, state_dim: int, action_dim: int, hidden: int) -> None:
-        super().__init__()
-        self.q1 = QNetwork(state_dim, action_dim, hidden)
-        self.q2 = QNetwork(state_dim, action_dim, hidden)
-
-    def forward(self, state: Tensor, action: Tensor) -> tuple[Tensor, Tensor]:
-        return self.q1(state, action), self.q2(state, action)
-
-
 class FixedVelocity(nn.Module):
     """Test double. The velocity is a parameter and does not depend on the input."""
 
@@ -179,111 +101,6 @@ class SumActionQ(nn.Module):
         return action.sum(dim=-1, keepdim=True)
 
 
-def flow_path(noise: Tensor, replay_action: Tensor, flow_time: Tensor) -> tuple[Tensor, Tensor]:
-    """Linear CFM path. x_tau = (1-tau) eps + tau a_buf, u_buf = a_buf - eps."""
-    x_tau = (1.0 - flow_time) * noise + flow_time * replay_action
-    u_buf = replay_action - noise
-    return x_tau, u_buf
-
-
-def qf3_actor_terms(
-    actor: nn.Module,
-    q1: nn.Module,
-    state: Tensor,
-    replay_action: Tensor,
-    noise: Tensor,
-    flow_time: Tensor,
-    *,
-    alpha: float,
-    lambda_cfm: float,
-    use_q: bool,
-    clip: bool,
-) -> ActorTerms:
-    """QF3 actor objective, or the named ablation of it.
-
-    clip=True is eq:actor-loss. clip=False is the paper's direct-Q ablation.
-    use_q=False keeps only the CFM term. The CFM residual is never clipped.
-    """
-    x_tau, u_buf = flow_path(noise, replay_action, flow_time)
-    velocity = actor(state, x_tau, flow_time)
-    delta = velocity - u_buf
-    # eq:q-gradient-mask uses a strict indicator, |delta_i| < alpha.
-    # torch.clamp lets a gradient through at exactly +/- alpha, so the mask is applied by hand.
-    # The forward value is still the clipped residual. CFM uses the raw residual.
-    if clip:
-        delta_clip = delta.clamp(-alpha, alpha)
-        mask = (delta.abs() < alpha).to(dtype=delta.dtype)
-        delta_for_q = delta_clip.detach() + (delta - delta.detach()) * mask
-    else:
-        delta_for_q = delta
-    endpoint = replay_action + (1.0 - flow_time) * delta_for_q
-    reconstruction = x_tau + (1.0 - flow_time) * u_buf
-    cfm = delta.square().sum(dim=-1).mean()
-    if use_q:
-        q_values = q1(state, endpoint)
-        loss = -q_values.mean() + lambda_cfm * cfm
-        q_mean = q_values.mean().detach()
-    else:
-        with torch.no_grad():
-            q_mean = q1(state, endpoint).mean()
-        loss = lambda_cfm * cfm
-    inside = delta.abs() < alpha
-    allowed = (1.0 - flow_time) * alpha
-    excess = (endpoint - replay_action).abs() - allowed
-    return ActorTerms(
-        loss=loss,
-        cfm=cfm.detach(),
-        q_mean=q_mean,
-        mask_fraction=inside.float().mean().detach(),
-        identity_error=(reconstruction - replay_action).abs().max().detach(),
-        endpoint_gap=(endpoint - replay_action).abs().max().detach(),
-        bound_violation=excess.max().clamp(min=0).detach(),
-    )
-
-
-def euler_integrate(actor: nn.Module, state: Tensor, x0: Tensor, n_steps: int) -> Tensor:
-    """Explicit Euler from tau=0 to tau=1. Times are k/N for k = 0..N-1."""
-    if n_steps < 1:
-        raise ValueError(f"euler steps must be positive, got {n_steps}")
-    step = 1.0 / n_steps
-    sample = x0
-    batch = state.shape[0]
-    for k in range(n_steps):
-        flow_time = torch.full((batch, 1), k * step, dtype=state.dtype)
-        velocity = actor(state, sample, flow_time)
-        sample = sample + step * velocity
-    return sample
-
-
-def critic_td_loss(
-    critic: TwinQ,
-    target_actor: nn.Module,
-    target_critic: TwinQ,
-    state: Tensor,
-    action: Tensor,
-    reward: Tensor,
-    next_state: Tensor,
-    done: Tensor,
-    euler_noise: Tensor,
-    smooth_noise: Tensor,
-    cfg: SmokeConfig,
-) -> Tensor:
-    """Twin-Q TD3 target. Next action is a 5-step flow sample plus clipped noise.
-
-    The action is not squashed with tanh and is not clamped to [-1, 1].
-    The paper rejects endpoint tanh and does not state an action bound.
-    """
-    with torch.no_grad():
-        next_action = euler_integrate(target_actor, next_state, euler_noise, cfg.euler_steps)
-        clipped_noise = (smooth_noise * cfg.policy_noise).clamp(-cfg.noise_clip, cfg.noise_clip)
-        next_action = next_action + clipped_noise
-        next_q1, next_q2 = target_critic(next_state, next_action)
-        target = reward + cfg.gamma * (1.0 - done) * torch.minimum(next_q1, next_q2)
-    q1, q2 = critic(state, action)
-    return (q1 - target).square().mean() + (q2 - target).square().mean()
-
-
-@torch.no_grad()
 def polyak_update(source: nn.Module, target: nn.Module, tau: float) -> None:
     """target <- (1-tau) target + tau source. CleanRL writes the same update."""
     for src, dst in zip(source.parameters(), target.parameters(), strict=True):
@@ -403,7 +220,10 @@ def probe(
         sample["done"],
         sample["euler_noise"],
         sample["smooth_noise"],
-        cfg,
+        euler_steps=cfg.euler_steps,
+        policy_noise=cfg.policy_noise,
+        noise_clip=cfg.noise_clip,
+        gamma=cfg.gamma,
     )
     values = terms_to_dict(actor_terms)
     values["objective"] = values.pop("actor_loss")
@@ -450,7 +270,10 @@ def train_mode(
             sample["done"],
             sample["euler_noise"],
             sample["smooth_noise"],
-            cfg,
+            euler_steps=cfg.euler_steps,
+            policy_noise=cfg.policy_noise,
+            noise_clip=cfg.noise_clip,
+            gamma=cfg.gamma,
         )
         critic_opt.zero_grad(set_to_none=True)
         td.backward()
