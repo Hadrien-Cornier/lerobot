@@ -108,7 +108,9 @@ class MicroDuck(Robot):
         self._frame_lock = threading.Lock()
         self._camera_frame: CameraFrame | None = None
         self._frame_sequence = 0
-        self._empty_frame = np.zeros((config.camera_height, config.camera_width, 3), dtype=np.uint8)
+        self._empty_frame: np.ndarray = np.zeros(
+            (config.camera_height, config.camera_width, 3), dtype=np.uint8
+        )
         self._frame_ready = threading.Event()
 
         self._is_connected = False
