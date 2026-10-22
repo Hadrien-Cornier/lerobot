@@ -49,6 +49,10 @@ class QF3AlgorithmConfig(RLAlgorithmConfig):
     policy_noise: float = 0.2
     noise_clip: float = 0.5
     policy_frequency: int = 2
+    # True is the velocity clip in eq:actor-loss. False is the direct-Q ablation:
+    # the same objective with that clip removed. The MuJoCo figure does not plot
+    # this ablation. The Humanoid ablation does.
+    clip_velocity: bool = True
     euler_steps: int = 5
     # Critic width. The paper's MuJoCo critic is 256. The flow actor width lives on
     # FlowActorConfig.

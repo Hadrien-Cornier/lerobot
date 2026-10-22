@@ -16,7 +16,8 @@
 
 One ``update`` consumes one replay batch. It always steps the critic. It steps
 the actor when ``optimization_step % policy_frequency == 0``, which includes the
-first call. The actor loss is ``qf3_actor_terms`` with the velocity clip on.
+first call. The actor loss is ``qf3_actor_terms``. ``clip_velocity`` defaults
+to True. Setting it False is the paper's direct-Q ablation.
 """
 
 from __future__ import annotations
@@ -115,7 +116,7 @@ class QF3Algorithm(RLAlgorithm):
                 alpha=self.config.alpha,
                 lambda_cfm=self.config.lambda_cfm,
                 use_q=True,
-                clip=True,
+                clip=self.config.clip_velocity,
             )
             self.optimizers["actor"].zero_grad(set_to_none=True)
             terms.loss.backward()
