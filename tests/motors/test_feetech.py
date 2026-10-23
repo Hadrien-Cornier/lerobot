@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+<<<<<<< HEAD
 """Feetech behaviour of `SerialMotorsBus`, from the rustypot definitions.
 
 Register access itself is family-agnostic and covered once in test_motors_bus.py;
@@ -22,6 +23,12 @@ sharing a bus, what the SCS lacks, the acceleration registers, the firmware chec
 a drive mode applied in software, and the Phase register quirk of the sts3215.
 """
 
+=======
+import re
+import sys
+import time
+from collections.abc import Generator
+>>>>>>> e7b4703f (fix(motors): discard stale input bytes before each Feetech instruction)
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -90,8 +97,302 @@ def test_protocol_version_is_still_accepted(dummy_motors):
         FeetechMotorsBus(port="/dev/dummy-port", motors=dummy_motors, protocol_version=0)
 
 
+<<<<<<< HEAD
 def test_motors_on_different_firmware_fail_the_handshake(dummy_motors):
     bus = make_bus(dummy_motors)
+=======
+@pytest.mark.parametrize("raise_on_error", (True, False))
+def test__read_error(raise_on_error, mock_motors, dummy_motors):
+    addr, length, id_, value, error = (10, 4, 1, 1337, scs.ERRBIT_VOLTAGE)
+    stub = mock_motors.build_read_stub(addr, length, id_, value, error=error)
+    bus = FeetechMotorsBus(
+        port=mock_motors.port,
+        motors=dummy_motors,
+    )
+    bus.connect(handshake=False)
+
+    if raise_on_error:
+        with pytest.raises(RuntimeError, match=re.escape("[RxPacketError] Input voltage error!")):
+            bus._read(addr, length, id_, raise_on_error=raise_on_error)
+    else:
+        _, _, read_error = bus._read(addr, length, id_, raise_on_error=raise_on_error)
+        assert read_error == error
+
+    assert mock_motors.stubs[stub].called
+
+
+@pytest.mark.parametrize("raise_on_error", (True, False))
+def test__read_comm(raise_on_error, mock_motors, dummy_motors):
+    addr, length, id_, value = (10, 4, 1, 1337)
+    stub = mock_motors.build_read_stub(addr, length, id_, value, reply=False)
+    bus = FeetechMotorsBus(
+        port=mock_motors.port,
+        motors=dummy_motors,
+    )
+    bus.connect(handshake=False)
+
+    if raise_on_error:
+        with pytest.raises(ConnectionError, match=re.escape("[TxRxResult] There is no status packet!")):
+            bus._read(addr, length, id_, raise_on_error=raise_on_error)
+    else:
+        _, read_comm, _ = bus._read(addr, length, id_, raise_on_error=raise_on_error)
+        assert read_comm == scs.COMM_RX_TIMEOUT
+
+    assert mock_motors.stubs[stub].called
+
+
+@pytest.mark.parametrize(
+    "addr, length, id_, value",
+    [
+        (0, 1, 1, 2),
+        (10, 2, 2, 999),
+        (42, 4, 3, 1337),
+    ],
+)
+def test__write(addr, length, id_, value, mock_motors, dummy_motors):
+    stub = mock_motors.build_write_stub(addr, length, id_, value)
+    bus = FeetechMotorsBus(
+        port=mock_motors.port,
+        motors=dummy_motors,
+    )
+    bus.connect(handshake=False)
+
+    comm, error = bus._write(addr, length, id_, value)
+
+    assert mock_motors.stubs[stub].wait_called()
+    assert comm == scs.COMM_SUCCESS
+    assert error == 0
+
+
+@pytest.mark.parametrize("raise_on_error", (True, False))
+def test__write_error(raise_on_error, mock_motors, dummy_motors):
+    addr, length, id_, value, error = (10, 4, 1, 1337, scs.ERRBIT_VOLTAGE)
+    stub = mock_motors.build_write_stub(addr, length, id_, value, error=error)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+
+    if raise_on_error:
+        with pytest.raises(RuntimeError, match=re.escape("[RxPacketError] Input voltage error!")):
+            bus._write(addr, length, id_, value, raise_on_error=raise_on_error)
+    else:
+        _, write_error = bus._write(addr, length, id_, value, raise_on_error=raise_on_error)
+        assert write_error == error
+
+    assert mock_motors.stubs[stub].called
+
+
+@pytest.mark.parametrize("raise_on_error", (True, False))
+def test__write_comm(raise_on_error, mock_motors, dummy_motors):
+    addr, length, id_, value = (10, 4, 1, 1337)
+    stub = mock_motors.build_write_stub(addr, length, id_, value, reply=False)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+
+    if raise_on_error:
+        with pytest.raises(ConnectionError, match=re.escape("[TxRxResult] There is no status packet!")):
+            bus._write(addr, length, id_, value, raise_on_error=raise_on_error)
+    else:
+        write_comm, _ = bus._write(addr, length, id_, value, raise_on_error=raise_on_error)
+        assert write_comm == scs.COMM_RX_TIMEOUT
+
+    assert mock_motors.stubs[stub].called
+
+
+@pytest.mark.parametrize(
+    "addr, length, ids_values",
+    [
+        (0, 1, {1: 4}),
+        (10, 2, {1: 1337, 2: 42}),
+        (42, 4, {1: 1337, 2: 42, 3: 4016}),
+    ],
+    ids=["1 motor", "2 motors", "3 motors"],
+)
+def test__sync_read(addr, length, ids_values, mock_motors, dummy_motors):
+    stub = mock_motors.build_sync_read_stub(addr, length, ids_values)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+
+    read_values, _ = bus._sync_read(addr, length, list(ids_values))
+
+    assert mock_motors.stubs[stub].called
+    assert read_values == ids_values
+
+
+def test__sync_read_retries_after_transient_failure(mock_motors, dummy_motors):
+    addr, length, ids_values = (10, 4, {1: 1337})
+    stub = mock_motors.build_sync_read_stub(addr, length, ids_values, num_invalid_try=1)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+
+    read_values, read_comm = bus._sync_read(addr, length, list(ids_values), num_retry=1)
+
+    assert read_comm == scs.COMM_SUCCESS
+    assert read_values == ids_values
+    assert mock_motors.stubs[stub].calls == 2
+
+
+@pytest.mark.parametrize("raise_on_error", (True, False))
+def test__sync_read_comm(raise_on_error, mock_motors, dummy_motors):
+    addr, length, ids_values = (10, 4, {1: 1337})
+    stub = mock_motors.build_sync_read_stub(addr, length, ids_values, reply=False)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+
+    if raise_on_error:
+        with pytest.raises(ConnectionError, match=re.escape("[TxRxResult] There is no status packet!")):
+            bus._sync_read(addr, length, list(ids_values), raise_on_error=raise_on_error)
+    else:
+        _, read_comm = bus._sync_read(addr, length, list(ids_values), raise_on_error=raise_on_error)
+        assert read_comm == scs.COMM_RX_TIMEOUT
+
+    assert mock_motors.stubs[stub].called
+
+
+def _leave_reply_in_input_buffer(bus: FeetechMotorsBus, addr: int, length: int, ids: list[int]) -> None:
+    """Send a sync read request and never read its reply.
+
+    A host that gave up waiting (timeout) does the same. The motors still answer, and the reply waits in the
+    input buffer of the serial port until the next transaction.
+    """
+    bus._setup_sync_reader(ids, addr, length)
+    assert bus.sync_reader.txPacket() == scs.COMM_SUCCESS
+    bus.port_handler.is_using = False  # a timed out receive releases the port in the same way
+    reply_bytes = len(ids) * (6 + length)  # header(2) id length error params checksum, for each motor
+    deadline = time.perf_counter() + 2.0
+    while bus.port_handler.getBytesAvailable() < reply_bytes:
+        assert time.perf_counter() < deadline, "the mock motors did not answer"
+        time.sleep(0.001)
+
+
+def test_clear_port_discards_pending_input(mock_motors, dummy_motors):
+    addr, length = STS_SMS_SERIES_CONTROL_TABLE["Present_Load"]
+    ids_values = {1: 30, 2: 0}
+    mock_motors.build_sync_read_stub(addr, length, ids_values)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+    _leave_reply_in_input_buffer(bus, addr, length, list(ids_values))
+    assert bus.port_handler.getBytesAvailable() > 0
+
+    bus.port_handler.clearPort()
+
+    assert bus.port_handler.getBytesAvailable() == 0
+
+
+def test__sync_read_ignores_reply_left_in_input_buffer(mock_motors, dummy_motors):
+    # Same length, same ids, different register: a Present_Load reply that arrives after its reader gave up
+    # must not be taken for the answer to a later Present_Position read.
+    load_addr, load_length = STS_SMS_SERIES_CONTROL_TABLE["Present_Load"]
+    pos_addr, pos_length = STS_SMS_SERIES_CONTROL_TABLE["Present_Position"]
+    loads = {1: 30, 2: 0, 3: 1068}
+    positions = {1: 2200, 2: 1296, 3: 2151}
+    mock_motors.build_sync_read_stub(load_addr, load_length, loads)
+    mock_motors.build_sync_read_stub(pos_addr, pos_length, positions)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+    _leave_reply_in_input_buffer(bus, load_addr, load_length, list(loads))
+
+    read_positions, _ = bus._sync_read(pos_addr, pos_length, list(positions))
+    read_loads, _ = bus._sync_read(load_addr, load_length, list(loads))
+
+    assert read_positions == positions
+    # The stream stays aligned: no read answers with the reply of the previous one.
+    assert read_loads == loads
+
+
+def test__sync_read_ignores_older_reply_of_same_register(mock_motors, dummy_motors):
+    # The reply that a retried read leaves behind is a valid reply of the same register. It must not be taken
+    # for the answer to the next read either: its values are older.
+    addr, length = STS_SMS_SERIES_CONTROL_TABLE["Present_Position"]
+    older = [2200, 1296, 2151]
+    newer = [2210, 1301, 2160]
+    ids = [1, 2, 3]
+    mock_motors.build_sequential_sync_read_stub(
+        addr, length, {id_: [o, n] for id_, o, n in zip(ids, older, newer, strict=True)}
+    )
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+    _leave_reply_in_input_buffer(bus, addr, length, ids)  # the first reply of the stub: the older values
+
+    read_values, _ = bus._sync_read(addr, length, ids)
+
+    assert list(read_values.values()) == newer
+
+
+def test__read_ignores_reply_left_in_input_buffer(mock_motors, dummy_motors):
+    load_addr, load_length = STS_SMS_SERIES_CONTROL_TABLE["Present_Load"]
+    pos_addr, pos_length = STS_SMS_SERIES_CONTROL_TABLE["Present_Position"]
+    mock_motors.build_sync_read_stub(load_addr, load_length, {1: 30})
+    mock_motors.build_read_stub(pos_addr, pos_length, 1, 2200)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+    _leave_reply_in_input_buffer(bus, load_addr, load_length, [1])
+
+    read_value, _, _ = bus._read(pos_addr, pos_length, 1)
+
+    assert read_value == 2200
+
+
+@pytest.mark.parametrize(
+    "addr, length, ids_values",
+    [
+        (0, 1, {1: 4}),
+        (10, 2, {1: 1337, 2: 42}),
+        (42, 4, {1: 1337, 2: 42, 3: 4016}),
+    ],
+    ids=["1 motor", "2 motors", "3 motors"],
+)
+def test__sync_write(addr, length, ids_values, mock_motors, dummy_motors):
+    stub = mock_motors.build_sync_write_stub(addr, length, ids_values)
+    bus = FeetechMotorsBus(port=mock_motors.port, motors=dummy_motors)
+    bus.connect(handshake=False)
+
+    comm = bus._sync_write(addr, length, ids_values)
+
+    assert mock_motors.stubs[stub].wait_called()
+    assert comm == scs.COMM_SUCCESS
+
+
+def test_is_calibrated(mock_motors, dummy_motors, dummy_calibration):
+    mins_stubs, maxes_stubs, homings_stubs = [], [], []
+    for cal in dummy_calibration.values():
+        mins_stubs.append(
+            mock_motors.build_read_stub(
+                *STS_SMS_SERIES_CONTROL_TABLE["Min_Position_Limit"], cal.id, cal.range_min
+            )
+        )
+        maxes_stubs.append(
+            mock_motors.build_read_stub(
+                *STS_SMS_SERIES_CONTROL_TABLE["Max_Position_Limit"], cal.id, cal.range_max
+            )
+        )
+        homings_stubs.append(
+            mock_motors.build_read_stub(
+                *STS_SMS_SERIES_CONTROL_TABLE["Homing_Offset"],
+                cal.id,
+                encode_sign_magnitude(cal.homing_offset, 11),
+            )
+        )
+
+    bus = FeetechMotorsBus(
+        port=mock_motors.port,
+        motors=dummy_motors,
+        calibration=dummy_calibration,
+    )
+    bus.connect(handshake=False)
+
+    is_calibrated = bus.is_calibrated
+
+    assert is_calibrated
+    assert all(mock_motors.stubs[stub].called for stub in mins_stubs)
+    assert all(mock_motors.stubs[stub].called for stub in maxes_stubs)
+    assert all(mock_motors.stubs[stub].called for stub in homings_stubs)
+
+
+def test_reset_calibration(mock_motors, dummy_motors):
+    write_homing_stubs = []
+    write_mins_stubs = []
+    write_maxes_stubs = []
+>>>>>>> e7b4703f (fix(motors): discard stale input bytes before each Feetech instruction)
     for motor in dummy_motors.values():
         seed(bus, "Model_Number", motor.id, 777)
         seed(bus, "Firmware_Major_Version", motor.id, 3)
