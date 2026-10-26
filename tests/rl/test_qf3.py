@@ -261,6 +261,9 @@ def test_unset_algorithm_follows_the_policy(tmp_path: Path):
 
 def test_learner_step_updates_qf3_and_actor_loads_weights(tmp_path: Path):
     """One learner step uses the service buffer, then the actor receives those weights."""
+    # Importing the learner loads transport.utils, which requires grpcio.
+    # Fast pytest does not install that extra. ImportError covers a missing module.
+    pytest.importorskip("grpc", exc_type=ImportError)
     from queue import Queue
 
     from lerobot.rl.actor import update_policy_parameters
