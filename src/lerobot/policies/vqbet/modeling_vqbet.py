@@ -375,14 +375,10 @@ class VQBeTModel(nn.Module):
 
         # get action features (pass through GPT)
         features = self.policy(input_tokens)
-        # len(self.config.input_features) is the number of different observation modes.
-        # this line gets the index of action prompt tokens.
-        input_features = self.config.input_features
-        if input_features is None:
-            raise ValueError("`input_features` must be resolved before running VQ-BeT.")
-        historical_act_pred_index: np.ndarray = np.arange(0, n_obs_steps) * (len(input_features) + 1) + len(
-            input_features
-        )
+        # Each step contains image tokens, the robot state, and the action query.
+        # Other dataset features do not contribute tokens.
+        tokens_per_step = self.num_images + 2
+        historical_act_pred_index: np.ndarray = np.arange(n_obs_steps) * tokens_per_step + tokens_per_step - 1
 
         # only extract the output tokens at the position of action query:
         # Behavior Transformer (BeT), and VQ-BeT are both sequence-to-sequence prediction models,
