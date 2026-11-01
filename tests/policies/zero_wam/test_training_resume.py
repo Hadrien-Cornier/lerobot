@@ -36,7 +36,10 @@ from lerobot.datasets.lerobot_dataset import LeRobotDataset  # noqa: E402
 from lerobot.policies.zero_wam.configuration_zero_wam import ZeroWAMConfig  # noqa: E402
 
 
-def test_training_cli_resume_matches_uninterrupted(tmp_path: Path, frozen_components: Path) -> None:
+@pytest.mark.parametrize("checkpoint_step", [2, 14])
+def test_training_cli_resume_matches_uninterrupted(
+    tmp_path: Path, frozen_components: Path, checkpoint_step: int
+) -> None:
     camera = "observation.images.image"
     dataset_root = tmp_path / "dataset"
     dataset = LeRobotDataset.create(
@@ -101,8 +104,8 @@ def test_training_cli_resume_matches_uninterrupted(tmp_path: Path, frozen_compon
         output_dir=tmp_path / "uninterrupted",
         num_workers=0,
         batch_size=2,
-        steps=4,
-        save_freq=2,
+        steps=18,
+        save_freq=checkpoint_step,
         log_freq=1,
         env_eval_freq=0,
         seed=123,
@@ -122,7 +125,7 @@ def test_training_cli_resume_matches_uninterrupted(tmp_path: Path, frozen_compon
         [*command, f"--config_path={config_path}"], env=env, capture_output=True, text=True, timeout=120
     )
     assert first.returncode == 0, first.stdout + first.stderr
-    checkpoint = cfg.output_dir / "checkpoints" / "000002"
+    checkpoint = cfg.output_dir / "checkpoints" / f"{checkpoint_step:06d}"
     resumed_dir = tmp_path / "resumed"
     second = subprocess.run(
         [
@@ -137,8 +140,8 @@ def test_training_cli_resume_matches_uninterrupted(tmp_path: Path, frozen_compon
         timeout=120,
     )
     assert second.returncode == 0, second.stdout + second.stderr
-    expected = cfg.output_dir / "checkpoints" / "000004"
-    actual = resumed_dir / "checkpoints" / "000004"
+    expected = cfg.output_dir / "checkpoints" / "000018"
+    actual = resumed_dir / "checkpoints" / "000018"
     for relative_path in (
         "pretrained_model/model.safetensors",
         "training_state/optimizer_state.safetensors",
@@ -152,7 +155,7 @@ def test_training_cli_resume_matches_uninterrupted(tmp_path: Path, frozen_compon
         left = json.loads((expected / "training_state" / filename).read_text())
         right = json.loads((actual / "training_state" / filename).read_text())
         assert left == right, filename
-    assert json.loads((actual / "training_state" / "training_step.json").read_text())["step"] == 4
+    assert json.loads((actual / "training_state" / "training_step.json").read_text())["step"] == 18
     initial = load_file(checkpoint / "pretrained_model" / "model.safetensors")
     final = load_file(actual / "pretrained_model" / "model.safetensors")
     assert any(not torch.equal(initial[key], final[key]) for key in initial)

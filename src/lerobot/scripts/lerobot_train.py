@@ -35,10 +35,11 @@ import time
 from collections.abc import Iterator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from pprint import pformat
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from accelerate import Accelerator
+    from accelerate.data_loader import DataLoaderShard
 
 import torch
 from termcolor import colored
@@ -732,6 +733,9 @@ def train(cfg: TrainPipelineConfig) -> None:
         step = resume_before_prepare(cfg)  # step + RNG only; sharded state loads after prepare
 
     dataloader, eval_dataloader = make_dataloaders(cfg, dataset, eval_dataset, step, parallel_dims)
+    resume_epoch = None
+    if cfg.resume and isinstance(dataloader.sampler, EpisodeAwareSampler):
+        resume_epoch = dataloader.sampler.state_dict()["epoch"]
 
     # --- prepare & resume phase 2 ---------------------------------------------------------------
     # The FSDP wrap-unit class names resolve right before prepare: user override, else the
@@ -752,6 +756,10 @@ def train(cfg: TrainPipelineConfig) -> None:
         policy, optimizer, dataloader, lr_scheduler = accelerator.prepare(
             policy, optimizer, dataloader, lr_scheduler
         )
+    if resume_epoch is not None:
+        # Accelerate starts its own epoch counter at zero and calls sampler.set_epoch on iteration.
+        # Align it with the restored sampler so the first resumed batch uses the saved permutation.
+        cast("DataLoaderShard", dataloader).set_epoch(resume_epoch)
     finalize_sharded_policy(policy, parallel_dims)
     ema = EMA(accelerator.unwrap_model(policy), cfg.ema) if cfg.ema is not None else None
     if cfg.resume:
