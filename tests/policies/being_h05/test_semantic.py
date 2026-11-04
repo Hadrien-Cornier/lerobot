@@ -65,6 +65,7 @@ def _stub_tokenizer(preprocessor: PolicyProcessorPipeline) -> None:
 
 @pytest.mark.parametrize("query_kind", ["vqa", "next_subtask"])
 def test_runtime_query_reaches_tokenizer(query_kind):
+    pytest.importorskip("datasets")
     config = BeingH05Config(device="cpu", use_language_recipe=True)
     preprocessor, _ = make_being_h05_pre_post_processors(config)
     _stub_tokenizer(preprocessor)
@@ -205,6 +206,7 @@ def test_recipe_text_targets_must_be_assistant_messages():
 
 
 def test_config_and_factories_are_wired_without_importing_author_dependencies():
+    pytest.importorskip("datasets")
     config = make_policy_config(
         "being_h05",
         input_features={
@@ -295,6 +297,7 @@ def test_recipe_pipeline_renders_language_columns_before_being_serialization():
 
 
 def test_quantile_normalization_round_trips_continuous_and_binary_actions(tmp_path):
+    pytest.importorskip("datasets")
     state_features = {
         f"observation.state.{name}": PolicyFeature(type=FeatureType.STATE, shape=(end - start,))
         for name, (start, end) in STATE_SLOTS.items()
@@ -381,6 +384,7 @@ def test_quantile_normalization_round_trips_continuous_and_binary_actions(tmp_pa
 
 
 def test_processor_pipeline_save_reload(tmp_path):
+    pytest.importorskip("datasets")
     config = BeingH05Config(
         input_features={
             **{

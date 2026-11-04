@@ -3160,6 +3160,15 @@ async = [
 av-dep = [
     { name = "av" },
 ]
+being-h05 = [
+    { name = "av" },
+    { name = "datasets" },
+    { name = "jsonlines" },
+    { name = "pandas" },
+    { name = "pyarrow" },
+    { name = "torchcodec", marker = "(platform_machine == 'arm64' and sys_platform == 'darwin') or (platform_machine == 'AMD64' and sys_platform == 'linux') or (platform_machine == 'aarch64' and sys_platform == 'linux') or (platform_machine == 'arm64' and sys_platform == 'linux') or (platform_machine == 'x86_64' and sys_platform == 'linux') or sys_platform == 'win32'" },
+    { name = "transformers" },
+]
 can-dep = [
     { name = "python-can" },
 ]
@@ -3230,9 +3239,6 @@ evaluation = [
     { name = "av" },
 ]
 evo1 = [
-    { name = "transformers" },
-]
-being-h05 = [
     { name = "transformers" },
 ]
 fastwam = [
@@ -3561,6 +3567,7 @@ requires-dist = [
     { name = "lerobot", extras = ["async"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["av-dep"], marker = "extra == 'dataset'" },
     { name = "lerobot", extras = ["av-dep"], marker = "extra == 'evaluation'" },
+    { name = "lerobot", extras = ["being-h05"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["can-dep"], marker = "extra == 'damiao'" },
     { name = "lerobot", extras = ["can-dep"], marker = "extra == 'robstride'" },
     { name = "lerobot", extras = ["damiao"], marker = "extra == 'all'" },
@@ -3568,6 +3575,7 @@ requires-dist = [
     { name = "lerobot", extras = ["dataset"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["dataset"], marker = "extra == 'aloha'" },
     { name = "lerobot", extras = ["dataset"], marker = "extra == 'annotations'" },
+    { name = "lerobot", extras = ["dataset"], marker = "extra == 'being-h05'" },
     { name = "lerobot", extras = ["dataset"], marker = "extra == 'core-scripts'" },
     { name = "lerobot", extras = ["dataset"], marker = "extra == 'dataset-viz'" },
     { name = "lerobot", extras = ["dataset"], marker = "extra == 'groot'" },
@@ -3590,7 +3598,6 @@ requires-dist = [
     { name = "lerobot", extras = ["diffusion"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["dynamixel"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["evo1"], marker = "extra == 'all'" },
-    { name = "lerobot", extras = ["being-h05"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["fastwam"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["feetech"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["feetech"], marker = "extra == 'hopejr'" },
@@ -3665,9 +3672,9 @@ requires-dist = [
     { name = "lerobot", extras = ["topreward"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["training"], marker = "extra == 'all'" },
     { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'annotations'" },
+    { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'being-h05'" },
     { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'eo1'" },
     { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'evo1'" },
-    { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'being-h05'" },
     { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'fastwam'" },
     { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'groot'" },
     { name = "lerobot", extras = ["transformers-dep"], marker = "extra == 'hilserl'" },
