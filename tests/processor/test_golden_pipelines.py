@@ -52,6 +52,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import torch
 
 from lerobot.configs.policies import PreTrainedConfig
 from lerobot.processor import PolicyProcessorPipeline
@@ -118,7 +119,8 @@ def _shape(config: dict) -> list[tuple[str | None, tuple[str, ...]]]:
     vendors an asset into the checkpoint. `TokenizerProcessorStep` does exactly that: it writes the
     tokenizer files next to the config so the checkpoint loads offline, so on reload `tokenizer_name`
     points at the vendored copy rather than the original Hub id. That rewrite is the feature. Exact
-    values are already pinned by `test_serialized_pipeline_matches_the_golden_fixture`.
+    values are already pinned by `test_serialized_pipeline_matches_the_golden_fixture`;
+    reload values are checked against the saved config below, resolving its declared artifacts.
     """
     return [
         (step.get("registry_name") or step.get("class_name"), tuple(sorted(step.get("config", {}))))
@@ -148,3 +150,14 @@ def test_pipelines_survive_a_save_load_roundtrip(policy_type, tmp_path):
             f"{policy_type} {role} pipeline did not survive a save_pretrained/from_pretrained "
             "roundtrip: the reloaded pipeline has a different step or config shape."
         )
+
+        saved_config = json.loads((save_dir / ROLE_FILENAMES[role]).read_text())
+        for step in saved_config["steps"]:
+            # Loading resolves only explicitly declared artifact paths. All other settings
+            # must survive unchanged, including settings that do not affect config shape.
+            for key, relative_path in step.pop("artifacts", {}).items():
+                step["config"][key] = str(save_dir / relative_path)
+        assert _as_serialized(reloaded.get_config()) == saved_config, (
+            f"{policy_type} {role} pipeline settings changed during reload."
+        )
+        torch.testing.assert_close(reloaded.state_dict(), pipeline.state_dict(), rtol=0, atol=0)
