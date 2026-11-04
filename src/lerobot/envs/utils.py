@@ -136,7 +136,7 @@ def prepare_canonical_observation(observations: dict[str, np.ndarray]) -> dict[s
     for name, value in observations.items():
         tensor = torch.from_numpy(value)
         if value.dtype == np.uint8 and value.ndim == 4:
-            tensor = tensor.permute(0, 3, 1, 2).contiguous().float() / 255
+            tensor = tensor.permute(0, 3, 1, 2).contiguous().float().div_(255)
         elif tensor.is_floating_point():
             tensor = tensor.float()
         result[name] = tensor
