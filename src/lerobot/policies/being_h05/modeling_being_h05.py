@@ -768,18 +768,14 @@ class BeingH05Model(nn.Module):
                 action_features = self.action_encoder(actions, timesteps).reshape(
                     batch_size * self.action_chunk_length, -1
                 )
-                current_sequence = packed_sequence.clone()
                 current_sequence_gen = base_sequence_gen.clone()
                 current_sequence_gen[packed_action_indexes] = action_features
                 if iteration > 0 and predicted_action_embedding is not None:
-                    state_features = current_sequence[packed_state_indexes]
+                    state_features = packed_sequence[packed_state_indexes]
                     projected_action = self.action_to_vlm_proj(current_sequence_gen[packed_action_indexes])
                     suffix = torch.cat([state_features, projected_action], dim=0).unsqueeze(0)
                     enhanced_suffix = self.mpg(suffix, predicted_action_embedding).squeeze(0)
                     state_count = len(packed_state_indexes)
-                    current_sequence[packed_state_indexes] = enhanced_suffix[:state_count].to(
-                        current_sequence.dtype
-                    )
                     current_sequence_gen[packed_action_indexes] = self.vlm_to_action_proj(
                         enhanced_suffix[state_count:]
                     ).to(current_sequence_gen.dtype)
