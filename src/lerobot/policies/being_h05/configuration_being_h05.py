@@ -101,7 +101,7 @@ class BeingH05Config(PreTrainedConfig):
     def __post_init__(self):
         super().__post_init__()
         if self.recipe_path is not None:
-            from lerobot.datasets.recipe import resolve_recipe_override
+            from lerobot.configs.recipe import resolve_recipe_override
 
             self.recipe = asdict(resolve_recipe_override(self.recipe, self.recipe_path))
         if self.unified_state_dim != 200 or self.unified_action_dim != 200:
