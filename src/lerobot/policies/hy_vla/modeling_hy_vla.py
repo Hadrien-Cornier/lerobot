@@ -1734,8 +1734,12 @@ class HyVLAFlowMatching(nn.Module):
         timestep,
     ):
         """Apply one denoising step of the noise `x_t` at a given timestep."""
-        # IMPORTANT: copy the past_key_values, or its size will increase during n-step denoise.
-        past_key_values_vlm = copy.deepcopy(past_key_values)
+        # The tower replaces cache entries with concatenated tensors; only the dictionaries need copying.
+        past_key_values_vlm = (
+            {layer: values.copy() for layer, values in past_key_values.items()}
+            if past_key_values is not None
+            else None
+        )
 
         suffix_embs, suffix_pad_masks, suffix_att_masks, modality_mask_suffix = self.embed_suffix(
             state,
