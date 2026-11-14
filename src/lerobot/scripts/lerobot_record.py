@@ -109,7 +109,7 @@ from lerobot.datasets import (
     create_initial_features,
     safe_stop_image_writer,
 )
-from lerobot.datasets.robot_settings import episodes_have_robot_settings, settings_text
+from lerobot.datasets.robot_settings import episode_files_have_robot_settings, settings_text
 from lerobot.processor import (
     RobotAction,
     RobotObservation,
@@ -505,7 +505,7 @@ def record(
         # Robot settings are read at the episode boundary below, not inside the control loop.
         # Resume keeps the dataset's existing format, including an empty dataset.
         if cfg.resume:
-            record_settings = episodes_have_robot_settings(dataset.meta)
+            record_settings = episode_files_have_robot_settings(dataset.root)
             if not record_settings:
                 logging.warning(
                     "Not recording robot settings: this dataset has no "

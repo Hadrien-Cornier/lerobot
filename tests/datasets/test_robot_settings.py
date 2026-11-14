@@ -38,8 +38,9 @@ from lerobot.datasets.dataset_tools import (
     merge_datasets,
     split_dataset,
 )
+from lerobot.datasets.io_utils import load_episodes
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
-from lerobot.datasets.robot_settings import ROBOT_SETTINGS_COLUMN, settings_text
+from lerobot.datasets.robot_settings import ROBOT_SETTINGS_COLUMN, read_robot_settings, settings_text
 from lerobot.scripts.lerobot_record import RecordConfig, record
 from tests.datasets.test_video_encoding import require_h264
 from tests.fixtures.constants import DUMMY_REPO_ID
@@ -206,6 +207,8 @@ def test_record_and_resume_keep_the_earlier_episode_file(tmp_path):
     assert [json.loads(value)["episode"] for value in stored] == [1, 2]
     loaded = Dataset.from_parquet([str(path) for path in _episode_files(root)])
     assert loaded.features[COLUMN].dtype == "string"
+    assert COLUMN not in load_episodes(root).column_names
+    assert [json.loads(value)["episode"] for value in read_robot_settings(root)] == [1, 2]
 
 
 def test_resume_of_an_old_dataset_writes_no_column(tmp_path):
@@ -390,4 +393,5 @@ def test_many_episodes_rotate_files_and_stay_strings(tmp_path):
     with _local_dataset():
         loaded_dataset = LeRobotDataset(DUMMY_REPO_ID, root=root)
     assert loaded_dataset.meta.total_episodes == 11
-    assert COLUMN in loaded_dataset.meta.episodes.column_names
+    assert COLUMN not in loaded_dataset.meta.episodes.column_names
+    assert read_robot_settings(root) == [json.dumps({"episode": episode}) for episode in range(11)]

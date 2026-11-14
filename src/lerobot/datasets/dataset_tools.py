@@ -68,7 +68,7 @@ from .io_utils import (
     write_tasks,
 )
 from .lerobot_dataset import LeRobotDataset
-from .robot_settings import ROBOT_SETTINGS_COLUMN
+from .robot_settings import ROBOT_SETTINGS_COLUMN, read_robot_settings
 from .utils import (
     DATA_DIR,
     DEFAULT_CHUNK_SIZE,
@@ -1947,6 +1947,7 @@ def convert_image_to_video_dataset(
     try:
         # Build episode metadata entries first
         logger.info("Building episode metadata...")
+        robot_settings_by_episode = read_robot_settings(dataset.root)
         cumulative_frame_idx = 0
         for ep_idx in episode_indices:
             src_episode = dataset.meta.episodes[ep_idx]
@@ -1960,8 +1961,8 @@ def convert_image_to_video_dataset(
             if "data/chunk_index" in src_episode:
                 ep_meta["data/chunk_index"] = src_episode["data/chunk_index"]
                 ep_meta["data/file_index"] = src_episode["data/file_index"]
-            if ROBOT_SETTINGS_COLUMN in dataset.meta.episodes.column_names:
-                ep_meta[ROBOT_SETTINGS_COLUMN] = src_episode[ROBOT_SETTINGS_COLUMN]
+            if robot_settings_by_episode is not None:
+                ep_meta[ROBOT_SETTINGS_COLUMN] = robot_settings_by_episode[ep_idx]
             all_episode_metadata[ep_idx] = ep_meta
             cumulative_frame_idx += ep_length
 

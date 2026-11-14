@@ -40,7 +40,7 @@ from .io_utils import (
     write_stats,
     write_tasks,
 )
-from .robot_settings import ROBOT_SETTINGS_COLUMN, episodes_have_robot_settings
+from .robot_settings import ROBOT_SETTINGS_COLUMN, episode_files_have_robot_settings
 from .utils import (
     DEFAULT_CHUNK_SIZE,
     DEFAULT_DATA_FILE_SIZE_IN_MB,
@@ -417,7 +417,7 @@ def aggregate_datasets(
 
     sources_with_episodes = [meta for meta in all_metadata if meta.total_episodes > 0]
     sources_without_settings = [
-        meta.repo_id for meta in sources_with_episodes if not episodes_have_robot_settings(meta)
+        meta.repo_id for meta in sources_with_episodes if not episode_files_have_robot_settings(meta.root)
     ]
     keep_robot_settings = bool(sources_with_episodes) and not sources_without_settings
     if sources_without_settings and len(sources_without_settings) < len(sources_with_episodes):

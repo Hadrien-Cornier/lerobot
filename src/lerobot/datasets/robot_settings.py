@@ -21,7 +21,8 @@ It is one JSON string per episode, stored as an Arrow string.
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Protocol
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pyarrow as pa
@@ -31,23 +32,38 @@ if TYPE_CHECKING:
 ROBOT_SETTINGS_COLUMN = "robot_settings"
 
 
-class _ColumnTable(Protocol):
-    column_names: list[str]
+def _episode_files(root: Path) -> list[Path]:
+    return sorted((Path(root) / "meta" / "episodes").glob("*/*.parquet"))
 
 
-class _SettingsMetadata(Protocol):
-    episodes: _ColumnTable | None
+def episode_files_have_robot_settings(root: Path) -> bool:
+    """True when an episode file's schema contains ``robot_settings``.
 
-    @property
-    def total_episodes(self) -> int: ...
-
-
-def episodes_have_robot_settings(meta: _SettingsMetadata) -> bool:
-    """True when this metadata already has the column and at least one episode."""
-    episodes = meta.episodes
-    if episodes is None or meta.total_episodes == 0:
+    This reads the schema only. The column is not part of the loaded episode table.
+    """
+    paths = _episode_files(root)
+    if not paths:
         return False
-    return ROBOT_SETTINGS_COLUMN in episodes.column_names
+    import pyarrow.parquet as pq
+
+    return ROBOT_SETTINGS_COLUMN in pq.read_schema(paths[0]).names
+
+
+def read_robot_settings(root: Path) -> list[str] | None:
+    """Each episode's settings string, in episode order, or None if the column is absent."""
+    paths = _episode_files(root)
+    if not paths or not episode_files_have_robot_settings(root):
+        return None
+    import pyarrow.parquet as pq
+
+    rows: list[tuple[int, str]] = []
+    for path in paths:
+        table = pq.read_table(path, columns=["episode_index", ROBOT_SETTINGS_COLUMN])
+        indices = table.column("episode_index").to_pylist()
+        values = table.column(ROBOT_SETTINGS_COLUMN).to_pylist()
+        rows.extend(zip(indices, values, strict=True))
+    rows.sort()
+    return [value for _, value in rows]
 
 
 def settings_text(robot: Robot) -> str | None:
