@@ -211,6 +211,27 @@ def test_record_and_resume_keep_the_earlier_episode_file(tmp_path):
     assert [json.loads(value)["episode"] for value in read_robot_settings(root)] == [1, 2]
 
 
+def test_load_episodes_omits_the_column_before_decoding(tmp_path):
+    _counting_settings.n = 0
+    root = tmp_path / "spy"
+    with patch.object(MockRobot, "read_settings", _counting_settings):
+        record(_record_cfg(root))
+    assert COLUMN in pq.read_schema(_episode_files(root)[0]).names
+    seen: dict[str, list[str] | None] = {}
+    real = Dataset.from_parquet
+
+    def spy(*args, **kwargs):
+        seen["columns"] = kwargs.get("columns")
+        return real(*args, **kwargs)
+
+    with patch("lerobot.datasets.io_utils.Dataset.from_parquet", spy):
+        loaded = load_episodes(root)
+    assert seen["columns"] is not None
+    assert COLUMN not in seen["columns"]
+    assert "episode_index" in seen["columns"]
+    assert COLUMN not in loaded.column_names
+
+
 def test_resume_of_an_old_dataset_writes_no_column(tmp_path):
     root = tmp_path / "old"
     record(_record_cfg(root))

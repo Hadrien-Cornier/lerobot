@@ -228,7 +228,8 @@ def load_episodes(local_dir: Path) -> datasets.Dataset:
     # Select episode features/columns containing references to episode data and videos
     # (e.g. tasks, dataset_from_index, dataset_to_index, data/chunk_index, data/file_index, etc.)
     # This is to speedup access to these data, instead of having to load episode stats.
-    # Stats stay in the episode files and are left out the same way.
+    # Stats are decoded with the episode files, then dropped from this table.
+    # Settings are omitted from the column list above, so they are not decoded.
     episodes = episodes.select_columns([key for key in episodes.features if not key.startswith("stats/")])
     return episodes
 
